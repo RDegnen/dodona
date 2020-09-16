@@ -20,7 +20,8 @@ lazy val dodona = (project in file("."))
       "org.scalatest" %% "scalatest" % "3.2.0" % "test",
       "com.typesafe.akka" %% "akka-stream" % AkkaVersion,
       "com.typesafe.akka" %% "akka-http" % AkkaHttpVersion,
-      "com.typesafe" % "config" % "1.4.0"
+      "com.typesafe" % "config" % "1.4.0",
+      "commons-codec" % "commons-codec" % "1.15"
     ),
     libraryDependencies ++= Seq(
       "io.circe" %% "circe-core",

@@ -16,6 +16,8 @@ object DodonaConfig {
 
   final val BINANCE_US_KEY = conf.getString("Dodona.binanceUsKey")
   final val BINANCE_US_SECRET = conf.getString("Dodona.binanceUsSecrect")
+  final val KRAKEN_KEY = conf.getString("Dodona.krakenKey")
+  final val KRAKEN_SECRET = conf.getString("Dodona.krakenSecret")
 }
 
 object Dodona extends App {
@@ -23,17 +25,18 @@ object Dodona extends App {
   implicit val executionContext = system.dispatcher
 
   val client = new HttpClient(API_BASE_URL)
-  val resposne = client.request[TickerPrice](
-    HttpMethods.GET, 
-    "/api/v3/ticker/price",
-    Map("symbol" -> "VETUSD"),
+  val resposne = client.request[Account](
+    "signed",
+    HttpMethods.GET,
+    "/api/v3/account",
+    Map(),
     headers = Seq(
       RawHeader("X-MBX-APIKEY", DodonaConfig.BINANCE_US_KEY)
     )
   )
 
   resposne.onComplete {
-    case Success(value) => println(value)
+    case Success(value)     => println(value)
     case Failure(exception) => println(exception.toString())
   }
 }
