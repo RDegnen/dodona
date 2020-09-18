@@ -15,67 +15,6 @@ import akka.http.scaladsl.model.RequestEntity
 import akka.http.scaladsl.model.HttpEntity
 import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.model.Uri.Query
-import javax.crypto.Mac
-import javax.crypto.spec.SecretKeySpec
-import dodona.DodonaConfig
-import dodona.domain.binance.ServerTime
-import akka.http.scaladsl.model.HttpMethods
-import dodona.json.binance.Decoders._
-import org.apache.commons.codec.binary.Hex
-
-trait IHttpClient {
-  def sendRequest[T: Decoder](
-      method: HttpMethod,
-      url: String,
-      query: Uri.Query,
-      headers: Seq[HttpHeader] = Nil,
-      entity: RequestEntity = HttpEntity.Empty
-  ): Future[T]
-
-  def getServerTime(): Future[ServerTime]
-
-  def request[T: Decoder](
-      requestType: String,
-      method: HttpMethod,
-      url: String,
-      params: Map[String, String] = Map(),
-      headers: Seq[HttpHeader] = Nil,
-      entity: RequestEntity = HttpEntity.Empty
-  ): Future[T] =
-    requestType match {
-      case "public" => sendRequest[T](method, url, Query(params), headers, entity)
-      case "signed" => {
-        implicit val system = ActorSystem()
-        implicit val executionContext = system.dispatcher
-        val serverTime = getServerTime()
-        val requestFuture = serverTime
-          .map { value =>
-            val timestamp = value.serverTime.toString()
-            val paramsWithTimestamp =
-              params.concat(Map("timestamp" -> timestamp))
-            val signature = generateHMAC(
-              Query(paramsWithTimestamp).toString(),
-              DodonaConfig.BINANCE_US_SECRET
-            )
-            val newQuery =
-              Query(paramsWithTimestamp.concat(Map("signature" -> signature)))
-            println(newQuery)
-            sendRequest[T](method, url, newQuery, headers, entity)
-          }
-        requestFuture.flatMap { future =>
-          future
-        }
-      }
-    }
-
-  private def generateHMAC(message: String, secret: String): String = {
-    val hmac = "HmacSHA256"
-    val sha256HMAC = Mac.getInstance(hmac)
-    val secretKeySpec = new SecretKeySpec(secret.getBytes, hmac)
-    sha256HMAC.init(secretKeySpec)
-    new String(Hex.encodeHex(sha256HMAC.doFinal(message.getBytes)))
-  }
-}
 
 class HttpClient(val baseUrl: String) extends IHttpClient {
   def sendRequest[T: Decoder](
@@ -103,14 +42,27 @@ class HttpClient(val baseUrl: String) extends IHttpClient {
     }
 
     unmarshalled.flatMap { value =>
-      println(value)
       decode[T](value) match {
         case Right(t)  => promise.success(t).future
         case Left(err) => promise.failure(err).future
       }
     }
   }
-
-  def getServerTime(): Future[ServerTime] =
-    sendRequest[ServerTime](HttpMethods.GET, "/api/v3/time")
 }
+
+// Example usage
+// val client = new HttpClient(API_BASE_URL)
+//   val resposne = client.request[Account](
+//     RequestTypes.SIGNED,
+//     HttpMethods.GET,
+//     "/api/v3/account",
+//     Map(),
+//     headers = Seq(
+//       RawHeader("X-MBX-APIKEY", DodonaConfig.BINANCE_US_KEY)
+//     )
+//   )
+
+//   resposne.onComplete {
+//     case Success(value)     => println(value)
+//     case Failure(exception) => println(exception.toString())
+//   }

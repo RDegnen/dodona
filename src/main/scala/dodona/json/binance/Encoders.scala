@@ -6,6 +6,7 @@ import io.circe.generic.semiauto._
 
 object Encoders {
   lazy implicit val SymbolEncoder: Encoder[Symbol] = deriveEncoder
+  lazy implicit val WebSocketMessageEncoder: Encoder[WebSocketMessage] = deriveEncoder
 }
 
 // Some examples on how to create json
@@ -14,5 +15,5 @@ object Encoders {
 //   symbol: "VETUSD"
 // }
 // """
-// This uses and Encoder
+// This uses an Encoder
 // val json = Symbol("VETUSD").asJson.toString()

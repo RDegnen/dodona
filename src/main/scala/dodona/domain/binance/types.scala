@@ -20,6 +20,35 @@ case class Account(
   canTrade: Boolean,
   canWithdraw: Boolean,
   canDeposit: Boolean,
-  updateTime: String,
+  updateTime: BigDecimal,
   balances: List[AssetBalance]
 )
+
+case class Candlestick(
+  t: Int,
+  T: Int,
+  s: String,
+  i: String,
+  f: Int,
+  L: Int,
+  o: BigDecimal,
+  c: BigDecimal,
+  h: BigDecimal,
+  l: BigDecimal,
+  v: String,
+  n: Int,
+  x: Boolean,
+  q: BigDecimal,
+  V: String,
+  Q: BigDecimal,
+  B: String
+)
+
+case class KlineCandlestickInterval(
+  e: String,
+  E: Int,
+  s: String,
+  k: Candlestick
+)
+
+case class WebSocketMessage(method: String, params: List[String], id: Int)

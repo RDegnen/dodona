@@ -1,15 +1,12 @@
 package dodona
 
-import dodona.http.HttpClient
-import akka.http.scaladsl.model.HttpMethods
-import dodona.constants.DodonaConstants.API_BASE_URL
-import scala.util.Success
-import scala.util.Failure
+import dodona.constants.BinanceConstants.WS_RAW_STREAM_BASE_URL
 import akka.actor.ActorSystem
-import dodona.json.binance.Decoders._
-import dodona.domain.binance._
 import com.typesafe.config.ConfigFactory
-import akka.http.scaladsl.model.headers.RawHeader
+import dodona.websocket.WebSocketClient
+import dodona.domain.binance.WebSocketMessage
+import akka.stream.scaladsl.Sink
+import akka.http.scaladsl.model.ws.Message
 
 object DodonaConfig {
   val conf = ConfigFactory.load()
@@ -24,19 +21,11 @@ object Dodona extends App {
   implicit val system = ActorSystem()
   implicit val executionContext = system.dispatcher
 
-  val client = new HttpClient(API_BASE_URL)
-  val resposne = client.request[Account](
-    "signed",
-    HttpMethods.GET,
-    "/api/v3/account",
-    Map(),
-    headers = Seq(
-      RawHeader("X-MBX-APIKEY", DodonaConfig.BINANCE_US_KEY)
-    )
+  val ws = new WebSocketClient()
+  val printSink = Sink.foreach[Message](println)
+  val socket = ws.openSocketWithMessage(
+    WS_RAW_STREAM_BASE_URL,
+    WebSocketMessage("SUBSCRIBE", List("vetusd@ticker"), 1),
+    printSink
   )
-
-  resposne.onComplete {
-    case Success(value)     => println(value)
-    case Failure(exception) => println(exception.toString())
-  }
 }
