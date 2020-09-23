@@ -30,26 +30,12 @@ object DodonaConfig {
 object Dodona extends App {
   implicit val system = ActorSystem()
   implicit val executionContext = system.dispatcher
-  // THIS WORKED FIRST TRY WOOO.
-  val ws = new WebSocketClient()
-  val client = new HttpClient(API_BASE_URL)
-  val getListenKey = client.request[ListenKey](
-    RequestTypes.PUBLIC,
-    HttpMethods.POST,
-    "/api/v3/userDataStream",
-    Map(),
-    headers = Seq(
-      RawHeader("X-MBX-APIKEY", DodonaConfig.BINANCE_US_KEY)
-    )
-  )
 
+  val ws = new WebSocketClient()
   val printSink = Sink.foreach[Message](println)
-  getListenKey.onComplete {
-    case Success(value)     => {
-      println(value)
-      val key = value.listenKey
-      ws.openSocket(s"$WS_RAW_STREAM_BASE_URL/$key", printSink)
-    }
-    case Failure(exception) => println(exception.toString())
-  }
+  val socket = ws.openSocket(
+    WS_RAW_STREAM_BASE_URL,
+    printSink,
+    WebSocketMessage("SUBSCRIBE", List("uniusd@kline_1m"), 1),
+  )
 }
