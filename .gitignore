@@ -1,4 +1,4 @@
-vars.sh
+.vars
 
 *.class
 *.log

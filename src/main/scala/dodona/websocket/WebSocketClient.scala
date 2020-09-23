@@ -15,6 +15,7 @@ import dodona.json.binance.Encoders.WebSocketMessageEncoder
 import io.circe.syntax._
 import scala.concurrent.Future
 import akka.Done
+import akka.http.scaladsl.model.StatusCodes
 
 trait IWebSocketClient {}
 
@@ -25,6 +26,7 @@ class WebSocketClient {
       sink: Sink[Message, Future[Done]]
   ): Unit = {
     implicit val system = ActorSystem()
+    implicit val executionContext = system.dispatcher
 
     val flow: Flow[Message, Message, Promise[Option[Message]]] =
       Flow.fromSinkAndSourceMat(
@@ -36,7 +38,46 @@ class WebSocketClient {
 
     val (upgradeResponse, promise) =
       Http().singleWebSocketRequest(WebSocketRequest(url), flow)
-    println(upgradeResponse)
 
+    val connected = upgradeResponse.map { upgrade =>
+      if (upgrade.response.status == StatusCodes.SwitchingProtocols) {
+        Done
+      } else {
+        throw new RuntimeException(s"Connection to $url failed: ${upgrade.response.status}")
+      }
+    }
+  }
+  // THIS SHIT WORKS FIRST TRY WOOO. Refactor to be more DRY
+  def openSocket(url: String, sink: Sink[Message, Future[Done]]): Unit = {
+    implicit val system = ActorSystem()
+    implicit val executionContext = system.dispatcher
+
+    val flow: Flow[Message, Message, Promise[Option[Message]]] =
+      Flow.fromSinkAndSourceMat(
+        sink,
+        Source
+          .empty
+          .concatMat(Source.maybe[Message])(Keep.right)
+      )(Keep.right)
+
+    val (upgradeResponse, promise) =
+      Http().singleWebSocketRequest(WebSocketRequest(url), flow)
+
+    val connected = upgradeResponse.map { upgrade =>
+      if (upgrade.response.status == StatusCodes.SwitchingProtocols) {
+        Done
+      } else {
+        throw new RuntimeException(s"Connection to $url failed: ${upgrade.response.status}")
+      }
+    }
   }
 }
+
+// How to use openSocketWithMessage
+// val ws = new WebSocketClient()
+//   val printSink = Sink.foreach[Message](println)
+//   val socket = ws.openSocketWithMessage(
+//     WS_RAW_STREAM_BASE_URL,
+//     WebSocketMessage("SUBSCRIBE", List("vetusd@kline_1m"), 1),
+//     printSink
+//   )

@@ -52,3 +52,5 @@ case class KlineCandlestickInterval(
 )
 
 case class WebSocketMessage(method: String, params: List[String], id: Int)
+
+case class ListenKey(listenKey: String)
