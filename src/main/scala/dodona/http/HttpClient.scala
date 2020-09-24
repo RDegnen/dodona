@@ -49,20 +49,3 @@ class HttpClient(val baseUrl: String) extends IHttpClient {
     }
   }
 }
-
-// Example usage
-// val client = new HttpClient(API_BASE_URL)
-//   val resposne = client.request[Account](
-//     RequestTypes.SIGNED,
-//     HttpMethods.GET,
-//     "/api/v3/account",
-//     Map(),
-//     headers = Seq(
-//       RawHeader("X-MBX-APIKEY", DodonaConfig.BINANCE_US_KEY)
-//     )
-//   )
-
-//   resposne.onComplete {
-//     case Success(value)     => println(value)
-//     case Failure(exception) => println(exception.toString())
-//   }

@@ -1,6 +1,29 @@
 # Dodona
 ## Documentation
 A place to write down things so I don't forget them.
+### HTTP
+Make a basic request
+```
+val client = new HttpClient(API_BASE_URL)
+val resposne = client.request[Account](
+  RequestTypes.PUBLIC,
+  HttpMethods.GET,
+  "/api/v3/account",
+  Map(),
+  headers = Seq(
+    RawHeader("X-MBX-APIKEY", DodonaConfig.BINANCE_US_KEY)
+  )
+)
+
+resposne.onComplete {
+  case Success(value)     => println(value)
+  case Failure(exception) => println(exception.toString())
+}
+```
+Make to make a signed request just do
+```
+RequestTypes.SIGNED
+```
 ### WebSocket
 #### Open a new socket with a message
 ```
