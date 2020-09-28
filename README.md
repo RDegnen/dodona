@@ -2,7 +2,7 @@
 ## Documentation
 A place to write down things so I don't forget them.
 ### HTTP
-Make a basic request
+#### Make a basic request
 ```
 val client = new HttpClient(API_BASE_URL)
 val resposne = client.request[Account](
@@ -20,10 +20,12 @@ resposne.onComplete {
   case Failure(exception) => println(exception.toString())
 }
 ```
-Make to make a signed request just do
+#### To make a signed request just do
 ```
 RequestTypes.SIGNED
 ```
+#### API keys
+Binance `RawHeader("X-MBX-APIKEY", DodonaConfig.BINANCE_US_KEY)`
 ### WebSocket
 #### Open a new socket with a message
 ```
