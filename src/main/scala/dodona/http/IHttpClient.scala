@@ -35,7 +35,8 @@ trait IHttpClient {
       url: String,
       params: Map[String, String] = Map(),
       headers: Seq[HttpHeader] = Nil,
-      entity: RequestEntity = HttpEntity.Empty
+      entity: RequestEntity = HttpEntity.Empty,
+      nonceGenerator: () => Long = () => System.currentTimeMillis()
   ): Future[T] =
     requestType match {
       case RequestTypes.PUBLIC =>
@@ -43,9 +44,8 @@ trait IHttpClient {
       case RequestTypes.SIGNED =>
         exchange match {
           case Exchanges.BINANCE => {
-            val timestamp = System.currentTimeMillis().toString()
             val paramsWithTimestamp =
-              params.concat(Map("timestamp" -> timestamp))
+              params.concat(Map("timestamp" -> nonceGenerator().toString()))
             val signature = generateHMAC(
               "HmacSHA256",
               Query(paramsWithTimestamp).toString(),
@@ -57,7 +57,7 @@ trait IHttpClient {
             sendRequest[T](method, url, newQuery, headers, entity)
           }
           case Exchanges.KRAKEN => {
-            val nonce = System.currentTimeMillis()
+            val nonce = nonceGenerator()
             val parameters = params.concat(Map("nonce" -> nonce.toString()))
             val signature = krakenSig(url, nonce, Query(parameters).toString(), DodonaConfig.KRAKEN_SECRET)
             val newHeaders = headers :+ RawHeader("API-Sign", signature)
@@ -80,7 +80,6 @@ trait IHttpClient {
   private def krakenSig(path: String, nonce: Long, postData: String, apiSecret: String): String = {
     val md = MessageDigest.getInstance("SHA-256")
     md.update((nonce + postData).getBytes())
-    println(nonce + postData)
     val mac = Mac.getInstance("HmacSHA512")
     mac.init(new SecretKeySpec(Base64.decodeBase64(apiSecret), "HmacSHA512"))
     mac.update(path.getBytes())
