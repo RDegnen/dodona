@@ -12,7 +12,7 @@ import io.circe.parser.decode
 import akka.actor.ActorSystem
 
 class TestHttpClient extends IHttpClient {
-  def sendRequest[T: Decoder](
+  def executeRequest[T: Decoder](
       method: HttpMethod,
       url: String,
       query: Uri.Query = Query(),
