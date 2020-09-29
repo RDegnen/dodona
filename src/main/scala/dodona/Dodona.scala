@@ -3,6 +3,7 @@ package dodona
 import dodona.constants.BinanceConstants.WS_RAW_STREAM_BASE_URL
 import dodona.constants.BinanceConstants.API_BASE_URL
 import dodona.constants.KrakenConstants.KRAKEN_API_BASE_URL
+import dodona.constants.KrakenConstants.KRAKEN_PRIVATE_WS_URL
 import akka.actor.ActorSystem
 import com.typesafe.config.ConfigFactory
 import dodona.websocket.WebSocketClient
@@ -21,9 +22,13 @@ import dodona.domain.binance.ListenKey
 import dodona.domain.binance.ServerTime
 import dodona.domain.kraken.KrakenServerTime
 import dodona.json.kraken.Decoders._
+import dodona.json.kraken.Encoders._
 import dodona.domain.kraken.KrakenResponse
 import dodona.constants.Exchanges
 import akka.http.scaladsl.model.FormData
+import dodona.domain.kraken.WebSocketToken
+import dodona.domain.kraken.WebSocketSubscription
+import dodona.domain.kraken.KrakenWebSocketMessage
 
 object DodonaConfig {
   val conf = ConfigFactory.load()
@@ -38,20 +43,27 @@ object Dodona extends App {
   implicit val system = ActorSystem()
   implicit val executionContext = system.dispatcher
 
+  val ws = new WebSocketClient()
   val client = new HttpClient(KRAKEN_API_BASE_URL)
-  val resposne = client.request[KrakenResponse[KrakenServerTime]](
+  val resposne = client.request[KrakenResponse[WebSocketToken]](
     Exchanges.KRAKEN,
     RequestTypes.SIGNED,
     HttpMethods.POST,
-    "/0/private/Balance",
+    "/0/private/GetWebSocketsToken",
     Map(),
     headers = Seq(
       RawHeader("API-Key", DodonaConfig.KRAKEN_KEY)
     )
   )
 
+  val printSink = Sink.foreach[Message](println)
   resposne.onComplete {
-    case Success(value)     => println(value)
+    case Success(value)     => {
+      val subscription = WebSocketSubscription("ownTrades", value.result.token)
+      val message = KrakenWebSocketMessage("subscribe", subscription)
+
+      ws.openSocket[KrakenWebSocketMessage](KRAKEN_PRIVATE_WS_URL, printSink, message)
+    }
     case Failure(exception) => println(exception.toString())
   }
 }

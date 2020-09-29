@@ -24,6 +24,20 @@ resposne.onComplete {
 ```
 RequestTypes.SIGNED
 ```
+Kraken signed example
+```
+val client = new HttpClient(KRAKEN_API_BASE_URL)
+val resposne = client.request[KrakenResponse[KrakenServerTime]](
+  Exchanges.KRAKEN,
+  RequestTypes.SIGNED,
+  HttpMethods.POST,
+  "/0/private/Balance",
+  Map(),
+  headers = Seq(
+    RawHeader("API-Key", DodonaConfig.KRAKEN_KEY)
+  )
+)
+```
 #### API keys
 Binance `RawHeader("X-MBX-APIKEY", DodonaConfig.BINANCE_US_KEY)`
 ### WebSocket

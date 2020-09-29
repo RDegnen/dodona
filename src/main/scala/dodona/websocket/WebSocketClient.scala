@@ -10,26 +10,25 @@ import akka.stream.scaladsl.Keep
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.ws.WebSocketRequest
 import scala.concurrent.Promise
-import dodona.domain.binance.WebSocketMessage
-import dodona.json.binance.Encoders.WebSocketMessageEncoder
 import io.circe.syntax._
 import scala.concurrent.Future
 import akka.Done
 import akka.http.scaladsl.model.StatusCodes
+import io.circe.Encoder
 
 trait IWebSocketClient {
-  def openSocket(
+  def openSocket[WM: Encoder](
       url: String,
       sink: Sink[Message, Future[Done]],
-      message: WebSocketMessage = null
+      message: WM = null
   ): Unit
 }
 
 class WebSocketClient extends IWebSocketClient {
-  def openSocket(
+  def openSocket[WM: Encoder](
       url: String,
       sink: Sink[Message, Future[Done]],
-      message: WebSocketMessage = null
+      message: WM = null
   ): Unit = {
     implicit val system = ActorSystem()
     implicit val executionContext = system.dispatcher
