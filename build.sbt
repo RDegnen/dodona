@@ -9,7 +9,7 @@ inThisBuild(
   )
 )
 
-val AkkaVersion = "2.6.8"
+val AkkaVersion = "2.6.9"
 val AkkaHttpVersion = "10.2.0"
 val CirceVersion = "0.12.3"
 

@@ -5,7 +5,7 @@ object RequestTypes {
   final val SIGNED = "signed"
 }
 
-object Exchanges {
+case object Exchanges {
   final val BINANCE = "Binance"
   final val KRAKEN = "Kraken"
 }

@@ -11,7 +11,7 @@ import scala.concurrent.Future
 import io.circe.parser.decode
 import akka.actor.ActorSystem
 
-class TestHttpClient extends IHttpClient {
+class TestHttpClient(override val exchange: String) extends IHttpClient(exchange) {
   def executeRequest[T: Decoder](
       method: HttpMethod,
       url: String,
