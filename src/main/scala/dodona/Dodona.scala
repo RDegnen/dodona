@@ -29,6 +29,9 @@ import akka.http.scaladsl.model.FormData
 import dodona.domain.kraken.WebSocketToken
 import dodona.domain.kraken.WebSocketSubscription
 import dodona.domain.kraken.KrakenWebSocketMessage
+import akka.stream.OverflowStrategy
+import akka.stream.scaladsl.Source
+import akka.stream.scaladsl.Keep
 
 object DodonaConfig {
   val conf = ConfigFactory.load()
@@ -56,13 +59,27 @@ object Dodona extends App {
     )
   )
 
+  val (ref, publisher) = Source
+    .actorRef[KrakenWebSocketMessage](bufferSize = 100, overflowStrategy = OverflowStrategy.dropBuffer)
+    .toMat(Sink.asPublisher(fanout = false))(Keep.both)
+    .run()
+  
+  val source = Source.fromPublisher(publisher)
+
   val printSink = Sink.foreach[Message](println)
   resposne.onComplete {
     case Success(value)     => {
       val subscription = WebSocketSubscription("ownTrades", value.result.token)
       val message = KrakenWebSocketMessage("subscribe", subscription)
 
-      ws.openSocket[KrakenWebSocketMessage](KRAKEN_PRIVATE_WS_URL, printSink, message)
+      val (connected, closed) = ws.openSocket[KrakenWebSocketMessage](KRAKEN_PRIVATE_WS_URL, source, printSink)
+      connected.onComplete {
+        case Success(_) => {
+          println("socket open")
+          ref ! message
+        }
+        case Failure(exception) => println(exception)
+      }
     }
     case Failure(exception) => println(exception.toString())
   }
