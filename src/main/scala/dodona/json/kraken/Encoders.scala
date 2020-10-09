@@ -5,7 +5,7 @@ import dodona.domain.kraken._
 import io.circe.generic.semiauto._
 
 object Encoders {
-  lazy implicit val WebSocketSubscriptionEncoder: Encoder[WebSocketSubscription] = deriveEncoder
-  lazy implicit val KrakenWebSocketMessageEncoder: Encoder[KrakenWebSocketMessage] = deriveEncoder
+  lazy implicit val WebSocketSubscriptionEncoder: Encoder[KrakenWsSubscription] = deriveEncoder
+  lazy implicit val KrakenWebSocketMessageEncoder: Encoder[KrakenWsMessage] = deriveEncoder
 
 }

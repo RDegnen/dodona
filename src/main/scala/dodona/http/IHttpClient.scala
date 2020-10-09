@@ -14,7 +14,7 @@ import dodona.constants.Exchanges
 import akka.http.scaladsl.model.headers.RawHeader
 import akka.http.scaladsl.model.FormData
 
-trait IHttpClient {
+abstract class IHttpClient(val exchange: String) {
   def executeRequest[T: Decoder](
       method: HttpMethod,
       url: String,
@@ -24,7 +24,6 @@ trait IHttpClient {
   ): Future[T]
 
   def request[T: Decoder](
-      exchange: String,
       requestType: String,
       method: HttpMethod,
       url: String,

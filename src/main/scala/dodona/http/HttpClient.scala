@@ -16,7 +16,7 @@ import akka.http.scaladsl.model.HttpEntity
 import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.model.Uri.Query
 
-class HttpClient(val baseUrl: String) extends IHttpClient {
+class HttpClient(override val exchange: String, val baseUrl: String) extends IHttpClient(exchange) {
   def executeRequest[T: Decoder](
       method: HttpMethod,
       url: String,
