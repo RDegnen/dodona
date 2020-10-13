@@ -9,6 +9,7 @@ import io.circe.generic.semiauto._
 import akka.actor.ActorSystem
 import scala.util.Success
 import scala.util.Failure
+import dodona.http.mappers.DodonaEnpoints
 
 case class Signature(signature: String)
 
@@ -21,11 +22,11 @@ class HttpClientTest extends AnyFunSpec {
   
     it("should sign a Kraken request") {
       val krakenClient = new TestHttpClient(Exchanges.KRAKEN)
-      val expectedSignature = Signature("U8OpTHxX7OrrbkN1+GdgRfIvDgTHx0V40XvH1bxz82PxH80we0IarcQKCNtSzMqDa2GJLB9wMmqFXCSDjiJFBw==")
+      val expectedSignature = Signature("lMsyNQQ4mfWadKpSpz6UDy8OHv7INrRsWuP+/NffDimfumdOE/OhzVdUTiaZw4S4yfFvCRIL2Lr7BxURZ/pvEA==")
       val response = krakenClient.request[Signature](
         RequestTypes.SIGNED,
         HttpMethods.GET,
-        "Kraken",
+        DodonaEnpoints.CANDLESTICKS,
         nonceGenerator = nonceFn
       )
 
@@ -41,7 +42,7 @@ class HttpClientTest extends AnyFunSpec {
       val response = binanceClient.request[Signature](
         RequestTypes.SIGNED,
         HttpMethods.GET,
-        "Binance",
+        DodonaEnpoints.CANDLESTICKS,
         nonceGenerator = nonceFn
       )
 

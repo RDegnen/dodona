@@ -31,6 +31,7 @@ import dodona.domain.kraken.KrakenWsMessage
 import akka.stream.OverflowStrategy
 import akka.stream.scaladsl.Source
 import akka.stream.scaladsl.Keep
+import dodona.http.mappers.DodonaEnpoints
 
 object DodonaConfig {
   val conf = ConfigFactory.load()
@@ -51,11 +52,7 @@ object Dodona extends App {
     val resposne = client.request[KrakenResponse[KrakenWsToken]](
       RequestTypes.SIGNED,
       HttpMethods.POST,
-      "/0/private/GetWebSocketsToken",
-      Map(),
-      headers = Seq(
-        RawHeader("API-Key", DodonaConfig.KRAKEN_KEY)
-      )
+      DodonaEnpoints.WEBSOCKET_TOKEN
     )
 
     val (ref, publisher) = Source
@@ -92,11 +89,8 @@ object Dodona extends App {
     val getListenKey = client.request[BinanceListenKey](
       RequestTypes.PUBLIC,
       HttpMethods.POST,
-      "/api/v3/userDataStream",
-      Map(),
-      headers = Seq(
-        RawHeader("X-MBX-APIKEY", DodonaConfig.BINANCE_US_KEY)
-      )
+      DodonaEnpoints.WEBSOCKET_TOKEN,
+      headers = Seq(RawHeader("X-MBX-APIKEY", DodonaConfig.BINANCE_US_KEY))
     )
 
     val (ref, publisher) = Source

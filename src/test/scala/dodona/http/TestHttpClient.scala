@@ -24,11 +24,11 @@ class TestHttpClient(override val exchange: String) extends IHttpClient(exchange
     var signature: String = ""
 
     url match {
-      case "Kraken" => {
+      case "/0/public/OHLC" => {
         val signatureValue = headers.map(header => header.value()).head
         signature = s"""{ "signature": "$signatureValue" }"""
       }
-      case "Binance" => {
+      case "/api/v3/klines" => {
         val signatureValue = query.map(param => param._2).tail.head
         signature = s"""{ "signature": "$signatureValue" }"""
       }
