@@ -42,7 +42,7 @@ class HttpClient(override val exchange: String, val baseUrl: String) extends IHt
     }
 
     unmarshalled.flatMap { value =>
-      println(value)
+      // println(value)
       decode[T](value) match {
         case Right(t)  => promise.success(t).future
         case Left(err) => promise.failure(err).future

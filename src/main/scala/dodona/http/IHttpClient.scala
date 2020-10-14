@@ -54,7 +54,8 @@ abstract class IHttpClient(val exchange: String) {
             val newQuery = Query(
               paramsWithTimestamp.concat(Map("signature" -> signature))
             )
-            val newHeaders = headers :+ RawHeader("X-MBX-APIKEY", DodonaConfig.BINANCE_US_KEY)
+            val newHeaders =
+              headers :+ RawHeader("X-MBX-APIKEY", DodonaConfig.BINANCE_US_KEY)
             executeRequest[T](method, endpoint, newQuery, newHeaders, entity)
           }
           case Exchanges.KRAKEN => {
@@ -66,7 +67,10 @@ abstract class IHttpClient(val exchange: String) {
               Query(parameters).toString(),
               DodonaConfig.KRAKEN_SECRET
             )
-            val newHeaders = headers ++ Seq(RawHeader("API-Sign", signature), RawHeader("API-Key", DodonaConfig.KRAKEN_KEY))
+            val newHeaders = headers ++ Seq(
+              RawHeader("API-Sign", signature),
+              RawHeader("API-Key", DodonaConfig.KRAKEN_KEY)
+            )
             executeRequest[T](
               method,
               endpoint,
@@ -76,6 +80,6 @@ abstract class IHttpClient(val exchange: String) {
             )
           }
         }
-      }
     }
+  }
 }

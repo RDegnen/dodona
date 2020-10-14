@@ -1,5 +1,19 @@
 package dodona.domain.binance.market
 
+case class HttpCandlestickResponse(
+  openTime:                 Long,
+  open:                     String,
+  high:                     String,
+  low:                      String,
+  close:                    String,
+  volume:                   String,
+  closeTime:                Long,
+  // quoteAssetVolume:         String,
+  // numberOfTrades:           Long,
+  // takerBuyBaseAssetVolume:  String,
+  // takerBuyQuoteAssetVolume: String
+)
+
 case class Candlestick(
   t: Int,
   T: Int,
@@ -26,5 +40,3 @@ case class KlineCandlestickInterval(
   s: String,
   k: Candlestick
 )
-
-case class TickerPrice(symbol: String, price: BigDecimal)
