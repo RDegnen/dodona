@@ -15,9 +15,9 @@ object Decoders {
   lazy implicit val AccountDecoder: Decoder[Account] = deriveDecoder
   
   // Market
-  lazy implicit val CandlestickDecoder: Decoder[Candlestick] = deriveDecoder
+  lazy implicit val CandlestickDecoder: Decoder[KlineCandlestick] = deriveDecoder
   lazy implicit val KlineCandlestickIntervalDecoder: Decoder[KlineCandlestickInterval] = deriveDecoder
-  lazy implicit val HttpCandlestickResponseDecoder: Decoder[HttpCandlestickResponse] =
+  lazy implicit val HttpCandlestickResponseDecoder: Decoder[Candlestick] =
     Decoder.instance { c =>
       // This decodes a list of HttpCandleStickResponses,
       // but not a single one. Still figuring out circe...
@@ -25,17 +25,17 @@ object Decoders {
       for {
         openTime <- openTimec.as[Long]
         openc = openTimec.right
-        open <- openc.as[String]
+        open <- openc.as[BigDecimal]
         highc = openc.right
-        high <- highc.as[String]
+        high <- highc.as[BigDecimal]
         lowc = highc.right
-        low <- lowc.as[String]
+        low <- lowc.as[BigDecimal]
         closec = lowc.right
-        close <- closec.as[String]
+        close <- closec.as[BigDecimal]
         volumec = closec.right
-        volume <- volumec.as[String]
+        volume <- volumec.as[BigDecimal]
         closeTimec = volumec.right
         closeTime <- closeTimec.as[Long]
-      } yield HttpCandlestickResponse(openTime, open, high, low, close, volume, closeTime)
+      } yield Candlestick(openTime, open, high, low, close, volume, closeTime)
     }
 }

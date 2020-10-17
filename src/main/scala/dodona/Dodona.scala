@@ -23,8 +23,8 @@ object Dodona extends App {
   val strategy = new MeanReversion(
     binanceHttpClient,
     binanceWebsocketClient,
-    "ADAUSD"
+    "BTCUSD"
   )
 
-  strategy.start()
+  strategy.run()
 }

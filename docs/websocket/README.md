@@ -73,3 +73,6 @@
     }
   }
 ```
+### Random notes
+Binance kline/candlestick connection 
+`wss://stream.binance.us:9443/ws/btcusd@kline_1m`

@@ -21,7 +21,8 @@ lazy val dodona = (project in file("."))
       "com.typesafe.akka" %% "akka-stream" % AkkaVersion,
       "com.typesafe.akka" %% "akka-http" % AkkaHttpVersion,
       "com.typesafe" % "config" % "1.4.0",
-      "commons-codec" % "commons-codec" % "1.15"
+      "commons-codec" % "commons-codec" % "1.15",
+      "org.ta4j" % "ta4j-core" % "0.13"
     ),
     libraryDependencies ++= Seq(
       "io.circe" %% "circe-core",
