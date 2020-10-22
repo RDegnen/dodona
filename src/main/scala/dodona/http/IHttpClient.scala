@@ -3,6 +3,7 @@ package dodona.http
 import scala.concurrent.Future
 import akka.http.scaladsl.model.HttpMethod
 import io.circe.Decoder
+import io.circe.parser.decode
 import akka.http.scaladsl.model.HttpHeader
 import akka.http.scaladsl.model.RequestEntity
 import akka.http.scaladsl.model.HttpEntity
@@ -17,6 +18,8 @@ import dodona.http.mappers.EndpointsMapper
 import dodona.domain.dodona.http.QueryParameters
 import dodona.domain.dodona.http.DefaultParams
 import dodona.http.mappers.QueryParametersMapper
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Promise
 
 abstract class IHttpClient(val exchange: String) {
   def executeRequest[T: Decoder](
@@ -81,5 +84,15 @@ abstract class IHttpClient(val exchange: String) {
           }
         }
     }
+  }
+
+  def decodeResponse[T: Decoder](jsonFuture: Future[String])(implicit ec: ExecutionContext): Future[T] = {
+    val promise = Promise[T]
+    jsonFuture.flatMap(value => {
+      decode[T](value) match {
+        case Right(decoded) => promise.success(decoded).future
+        case Left(err) => promise.failure(err).future
+      }
+    })
   }
 }

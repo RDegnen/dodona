@@ -8,8 +8,6 @@ import akka.http.scaladsl.model.HttpMethod
 import akka.stream.ActorMaterializer
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import io.circe.Decoder
-import io.circe.parser.decode
-import scala.concurrent.Promise
 import akka.http.scaladsl.model.HttpHeader
 import akka.http.scaladsl.model.RequestEntity
 import akka.http.scaladsl.model.HttpEntity
@@ -27,7 +25,6 @@ class HttpClient(override val exchange: String, val baseUrl: String) extends IHt
     implicit val system = ActorSystem()
     implicit val materializer = ActorMaterializer
     implicit val executionContext = system.dispatcher
-    val promise = Promise[T]
 
     val response = Http().singleRequest(
       HttpRequest(
@@ -41,12 +38,6 @@ class HttpClient(override val exchange: String, val baseUrl: String) extends IHt
       Unmarshal(response.entity).to[String]
     }
 
-    unmarshalled.flatMap { value =>
-      // println(value)
-      decode[T](value) match {
-        case Right(t)  => promise.success(t).future
-        case Left(err) => promise.failure(err).future
-      }
-    }
+    decodeResponse[T](unmarshalled)
   }
 }

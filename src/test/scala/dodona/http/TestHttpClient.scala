@@ -8,7 +8,6 @@ import akka.http.scaladsl.model.HttpHeader
 import akka.http.scaladsl.model.RequestEntity
 import akka.http.scaladsl.model.HttpEntity
 import scala.concurrent.Future
-import io.circe.parser.decode
 import akka.actor.ActorSystem
 
 class TestHttpClient(override val exchange: String) extends IHttpClient(exchange) {
@@ -34,10 +33,6 @@ class TestHttpClient(override val exchange: String) extends IHttpClient(exchange
       }
     }
     
-    Future {
-      decode[T](signature) match {
-        case Right(t) => t
-      }
-    }
+    decodeResponse[T](Future { signature })
   }
 }

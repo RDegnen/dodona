@@ -15,6 +15,5 @@ class Candlesticks(tag: Tag) extends Table[Candlestick](tag, "candlesticks") {
   def openTime = column[Long]("open_time")
   def closeTime = column[Long]("close_time")
   def * = 
-    (id, symbol, interval, open, high, low, close, volume, openTime, closeTime) <>
-    (Candlestick.tupled, Candlestick.unapply)
+    (id, symbol, interval, open, high, low, close, volume, openTime, closeTime).mapTo[Candlestick]
 }
