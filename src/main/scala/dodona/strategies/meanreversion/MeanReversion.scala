@@ -51,22 +51,8 @@ class MeanReversion(
       case Success(candles) => {
         series =
           new BaseBarSeriesBuilder().withMaxBarCount(500).withName(pair).build()
-        candles.foreach { candlestick =>
-          val instant = new ju.Date(candlestick.closeTime).toInstant()
-          val zdt = ZonedDateTime.ofInstant(instant, ZoneId.systemDefault())
-          series.addBar(
-            zdt,
-            candlestick.open,
-            candlestick.high,
-            candlestick.low,
-            candlestick.close,
-            candlestick.volume
-          )
-        }
+        candles.foreach(addBarToSeries) 
         openSocketConnection()
-        // val closePriceIndicator = new ClosePriceIndicator(series)
-        // val ema = new EMAIndicator(closePriceIndicator, 14)
-        // val rsi = new RSIIndicator(closePriceIndicator, 14)
         // println(series.getBarData().size())
         // println(rsi.getValue(499))
       }
@@ -74,12 +60,35 @@ class MeanReversion(
     }
   }
 
-  def onMessageSink(message: Message): Unit = {
+  def addBarToSeries(candlestick: Candlestick): Unit = {
+    println("adding bar")
+    val instant = new ju.Date(candlestick.closeTime).toInstant()
+    val zdt = ZonedDateTime.ofInstant(instant, ZoneId.systemDefault())
+    series.addBar(
+      zdt,
+      candlestick.open,
+      candlestick.high,
+      candlestick.low,
+      candlestick.close,
+      candlestick.volume
+    )
+  }
+
+  def calculateIndicators(): Unit = {
+    val closePriceIndicator = new ClosePriceIndicator(series)
+    val shortEma = new EMAIndicator(closePriceIndicator, 14)
+    val longEma = new EMAIndicator(closePriceIndicator, 50)
+    println(shortEma.getValue(499), longEma.getValue(499))
+  }
+
+  def onMessage(message: Message): Unit = {
+    println("Incoming message", message)
     decode[KlineCandlestickInterval](message.asTextMessage.getStrictText) match {
       case Right(value) => {
         val kc = value.k
         val candlestick = Candlestick(kc.t, kc.o, kc.h, kc.l, kc.c, kc.v, kc.T)
-        println(candlestick)
+        addBarToSeries(candlestick)
+        calculateIndicators()
       }
       case Left(err) => println(err)
     }
@@ -97,7 +106,7 @@ class MeanReversion(
       .run()
 
     val source = Source.fromPublisher(publisher)
-    val sink = Sink.foreach[Message](onMessageSink)
+    val sink = Sink.foreach[Message](onMessage)
 
     val (connected, closed) = websocketClient.openSocket[BinanceWsMessage](
       s"$WS_RAW_STREAM_BASE_URL/$wsPair@kline_$interval",
