@@ -18,9 +18,14 @@ object EndpointsMapper {
     DodonaEnpoints.WEBSOCKET_TOKEN -> "/0/private/GetWebSocketsToken"
   )
 
+  val backtesterMap = Map(
+    DodonaEnpoints.CANDLESTICKS -> "/candlesticks/OHLC"
+  )
+
   def getEndpoint(exchange: String, endpoint: String): String = 
     exchange match {
       case Exchanges.BINANCE => binanceMap(endpoint)
       case Exchanges.KRAKEN => krakenMap(endpoint)
+      case Exchanges.BACKTESTER => backtesterMap(endpoint)
     }
 }

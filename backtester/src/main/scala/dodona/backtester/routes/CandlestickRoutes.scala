@@ -14,7 +14,7 @@ class CandlestickRoutes(implicit ec: ExecutionContext) {
   lazy val routes: Route = {
     pathPrefix("candlesticks") {
       concat(
-        path("ohlc") {
+        path("OHLC") {
           get {
             complete {
               model.getOHLC().flatMap(seq =>

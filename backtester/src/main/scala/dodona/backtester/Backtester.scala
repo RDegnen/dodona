@@ -19,7 +19,9 @@ object Backtester extends App {
   implicit val executionContext = system.dispatcher
 
   val candlestickRoutes = new CandlestickRoutes()
-  val routes: Route = concat(candlestickRoutes.routes)
+  val routes: Route = pathPrefix("backtester") {
+    concat(candlestickRoutes.routes)
+  }
   val binding = Http().newServerAt("localhost", BacktesterConfig.PORT).bind(routes)
 
   println(s"Server running at port ${BacktesterConfig.PORT}")

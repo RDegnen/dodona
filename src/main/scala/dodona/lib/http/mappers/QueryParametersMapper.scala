@@ -18,9 +18,17 @@ object QueryParametersMapper {
         Map("pair" -> pair, "interval" -> interval)
     }
 
+  def backtesterMatcher(params: QueryParameters): Map[String, String] =
+    params match {
+      case DefaultParams() => Map()
+      case CandlestickParams(pair, interval) =>
+        Map("pair" -> pair, "interval" -> interval)
+    }
+
   def convertParamsToMap(exchange: String, params: QueryParameters): Map[String, String] =
     exchange match {
       case Exchanges.BINANCE => binanceMatcher(params)
       case Exchanges.KRAKEN => krakenMatcher(params)
+      case Exchanges.BACKTESTER => backtesterMatcher(params)
     }
 }

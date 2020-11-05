@@ -6,6 +6,7 @@ import dodona.constants.Exchanges
 import dodona.lib.http.HttpClient
 import dodona.lib.websocket.WebSocketClient
 import dodona.strategies.meanreversion.MeanReversion
+import dodona.constants.DodonaConstants
 
 object DodonaConfig {
   val conf = ConfigFactory.load()
@@ -17,7 +18,7 @@ object DodonaConfig {
 }
 
 object Dodona extends App {
-  val binanceHttpClient = new HttpClient(Exchanges.BINANCE, API_BASE_URL)
+  val binanceHttpClient = new HttpClient(Exchanges.BACKTESTER, DodonaConstants.BACKTESTER_BASE_URL)
   val binanceWebsocketClient = new WebSocketClient()
   val strategy = new MeanReversion(
     binanceHttpClient,
