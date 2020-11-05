@@ -1,19 +1,30 @@
 package dodona.backtester
 
 import com.typesafe.config.ConfigFactory
-import dodona.backtester.lib.http.HttpClient
-import dodona.backtester.lib.websocket.WebSocketClient
-import dodona.constants.{BinanceConstants, Exchanges}
-import dodona.strategies.meanreversion.MeanReversion
+import akka.actor.ActorSystem
+import akka.http.scaladsl.Http
+import akka.http.scaladsl.server.Route
+import akka.http.scaladsl.server.Directives._
+import dodona.backtester.routes.CandlestickRoutes
+import scala.io.StdIn
 
 object BacktesterConfig {
   val conf = ConfigFactory.load()
+
+  final val PORT = conf.getInt("DodonaBacktester.port")
 }
 
 object Backtester extends App {
-  val httpClient = new HttpClient(Exchanges.BINANCE, BinanceConstants.API_BASE_URL)
-  val webSocketClient = new WebSocketClient()
-  val strategy = new MeanReversion(httpClient, webSocketClient, "BTCUSD")
+  implicit val system = ActorSystem()
+  implicit val executionContext = system.dispatcher
 
-  strategy.run()
+  val candlestickRoutes = new CandlestickRoutes()
+  val routes: Route = concat(candlestickRoutes.routes)
+  val binding = Http().newServerAt("localhost", BacktesterConfig.PORT).bind(routes)
+
+  println(s"Server running at port ${BacktesterConfig.PORT}")
+  StdIn.readLine()
+  binding
+    .flatMap(_.unbind())
+    .onComplete(_ => system.terminate())
 }

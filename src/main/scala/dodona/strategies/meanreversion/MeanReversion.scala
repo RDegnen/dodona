@@ -12,13 +12,13 @@ import akka.stream.OverflowStrategy
 import akka.stream.scaladsl.{Keep, Sink, Source}
 import dodona.constants.BinanceConstants.WS_RAW_STREAM_BASE_URL
 import dodona.constants.RequestTypes
-import dodona.domain.binance.BinanceWsMessage
-import dodona.domain.binance.market.{Candlestick, KlineCandlestickInterval}
-import dodona.domain.dodona.http.CandlestickParams
-import dodona.http.IHttpClient
-import dodona.http.mappers.DodonaEnpoints
-import dodona.json.binance.Decoders._
-import dodona.websocket.IWebSocketClient
+import dodona.lib.domain.binance.BinanceWsMessage
+import dodona.lib.domain.binance.market.{Candlestick, KlineCandlestickInterval}
+import dodona.lib.domain.dodona.http.CandlestickParams
+import dodona.lib.http.IHttpClient
+import dodona.lib.http.mappers.DodonaEnpoints
+import dodona.lib.json.binance.Decoders._
+import dodona.lib.websocket.IWebSocketClient
 import io.circe.parser.decode
 import org.ta4j.core.indicators.EMAIndicator
 import org.ta4j.core.indicators.helpers.ClosePriceIndicator
@@ -89,7 +89,7 @@ class MeanReversion(
   }
 
   def openSocketConnection(): Unit = {
-    import dodona.json.binance.Encoders._
+    import dodona.lib.json.binance.Encoders._
     val wsPair = pair.toLowerCase()
     val (ref, publisher) = Source
       .actorRef[BinanceWsMessage](
