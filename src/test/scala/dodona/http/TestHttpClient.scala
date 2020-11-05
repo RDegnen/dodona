@@ -9,6 +9,7 @@ import akka.http.scaladsl.model.RequestEntity
 import akka.http.scaladsl.model.HttpEntity
 import scala.concurrent.Future
 import akka.actor.ActorSystem
+import scala.concurrent.ExecutionContext
 
 class TestHttpClient(override val exchange: String) extends IHttpClient(exchange) {
   def executeRequest[T: Decoder](
@@ -17,9 +18,7 @@ class TestHttpClient(override val exchange: String) extends IHttpClient(exchange
       query: Uri.Query = Query(),
       headers: Seq[HttpHeader] = Nil,
       entity: RequestEntity = HttpEntity.Empty
-  ): Future[T] = {
-    implicit val system = ActorSystem()
-    implicit val executionContext = system.dispatcher
+  )(implicit system: ActorSystem, ec: ExecutionContext): Future[T] = {
     var signature: String = ""
 
     url match {

@@ -8,10 +8,9 @@ import akka.http.scaladsl.model.{HttpEntity, HttpHeader, HttpMethod, RequestEnti
 import dodona.backtester.controllers.CandlesticksController
 import dodona.http.IHttpClient
 import io.circe.Decoder
+import scala.concurrent.ExecutionContext
 
 class HttpClient(override val exchange: String, val baseUrl: String) extends IHttpClient(exchange) {
-  implicit val system = ActorSystem()
-  implicit val executionContext = system.dispatcher
   private val candlesticksController = new CandlesticksController(exchange)
 
   def executeRequest[T: Decoder](
@@ -20,7 +19,7 @@ class HttpClient(override val exchange: String, val baseUrl: String) extends IHt
       query: Uri.Query = Query(),
       headers: Seq[HttpHeader] = Nil,
       entity: RequestEntity = HttpEntity.Empty
-  ): Future[T] = {
+  )(implicit system: ActorSystem, ec: ExecutionContext): Future[T] = {
     url match {
       case "/api/v3/klines" => {
         val response = candlesticksController.getBatch()

@@ -4,13 +4,21 @@ import scala.concurrent.{ExecutionContext, Future, Promise}
 
 import akka.http.scaladsl.model.Uri.Query
 import akka.http.scaladsl.model.headers.RawHeader
-import akka.http.scaladsl.model.{FormData, HttpEntity, HttpHeader, HttpMethod, RequestEntity, Uri}
+import akka.http.scaladsl.model.{
+  FormData,
+  HttpEntity,
+  HttpHeader,
+  HttpMethod,
+  RequestEntity,
+  Uri
+}
 import dodona.DodonaConfig
 import dodona.constants.{Exchanges, RequestTypes}
 import dodona.domain.dodona.http.{DefaultParams, QueryParameters}
 import dodona.http.mappers.{EndpointsMapper, QueryParametersMapper}
 import io.circe.Decoder
 import io.circe.parser.decode
+import akka.actor.ActorSystem
 
 abstract class IHttpClient(val exchange: String) {
   def executeRequest[T: Decoder](
@@ -19,7 +27,7 @@ abstract class IHttpClient(val exchange: String) {
       query: Uri.Query,
       headers: Seq[HttpHeader] = Nil,
       entity: RequestEntity = HttpEntity.Empty
-  ): Future[T]
+  )(implicit system: ActorSystem, ec: ExecutionContext): Future[T]
 
   def request[T: Decoder](
       requestType: String,
@@ -29,7 +37,7 @@ abstract class IHttpClient(val exchange: String) {
       headers: Seq[HttpHeader] = Seq(),
       entity: RequestEntity = HttpEntity.Empty,
       nonceGenerator: () => Long = () => System.currentTimeMillis()
-  ): Future[T] = {
+  )(implicit system: ActorSystem, ec: ExecutionContext): Future[T] = {
     val endpoint = EndpointsMapper.getEndpoint(exchange, url)
     val paramsMap = QueryParametersMapper.convertParamsToMap(exchange, params)
 
@@ -77,12 +85,14 @@ abstract class IHttpClient(val exchange: String) {
     }
   }
 
-  def decodeResponse[T: Decoder](jsonFuture: Future[String])(implicit ec: ExecutionContext): Future[T] = {
+  def decodeResponse[T: Decoder](
+      jsonFuture: Future[String]
+  )(implicit ec: ExecutionContext): Future[T] = {
     val promise = Promise[T]
     jsonFuture.flatMap(value => {
       decode[T](value) match {
         case Right(decoded) => promise.success(decoded).future
-        case Left(err) => promise.failure(err).future
+        case Left(err)      => promise.failure(err).future
       }
     })
   }

@@ -1,6 +1,5 @@
 package dodona.backtester
 
-import akka.actor.ActorSystem
 import com.typesafe.config.ConfigFactory
 import dodona.backtester.lib.http.HttpClient
 import dodona.backtester.lib.websocket.WebSocketClient
@@ -12,9 +11,6 @@ object BacktesterConfig {
 }
 
 object Backtester extends App {
-  implicit val system = ActorSystem()
-  implicit val executionContext = system.dispatcher
-
   val httpClient = new HttpClient(Exchanges.BINANCE, BinanceConstants.API_BASE_URL)
   val webSocketClient = new WebSocketClient()
   val strategy = new MeanReversion(httpClient, webSocketClient, "BTCUSD")
