@@ -1,28 +1,21 @@
 package dodona
 
+import scala.util.{Failure, Success}
+
 import akka.actor.ActorSystem
-import dodona.websocket.WebSocketClient
-import dodona.http.HttpClient
-import dodona.constants.Exchanges
-import dodona.domain.kraken.KrakenResponse
-import dodona.constants.RequestTypes
 import akka.http.scaladsl.model.HttpMethods
-import dodona.http.mappers.DodonaEnpoints
-import akka.stream.scaladsl.Source
-import dodona.domain.kraken.KrakenWsMessage
-import akka.stream.scaladsl.Sink
-import akka.stream.scaladsl.Keep
-import akka.stream.OverflowStrategy
-import akka.http.scaladsl.model.ws.Message
-import dodona.domain.binance.BinanceListenKey
-import dodona.domain.binance.BinanceWsMessage
-import dodona.domain.kraken.KrakenWsToken
-import dodona.constants.KrakenConstants.{KRAKEN_API_BASE_URL, KRAKEN_PRIVATE_WS_URL}
-import dodona.constants.BinanceConstants.{API_BASE_URL, WS_RAW_STREAM_BASE_URL}
-import scala.util.Success
-import dodona.domain.kraken.KrakenWsSubscription
-import scala.util.Failure
 import akka.http.scaladsl.model.headers.RawHeader
+import akka.http.scaladsl.model.ws.Message
+import akka.stream.OverflowStrategy
+import akka.stream.scaladsl.{Keep, Sink, Source}
+import dodona.constants.BinanceConstants.{API_BASE_URL, WS_RAW_STREAM_BASE_URL}
+import dodona.constants.KrakenConstants.{KRAKEN_API_BASE_URL, KRAKEN_PRIVATE_WS_URL}
+import dodona.constants.{Exchanges, RequestTypes}
+import dodona.domain.binance.{BinanceListenKey, BinanceWsMessage}
+import dodona.domain.kraken.{KrakenResponse, KrakenWsMessage, KrakenWsSubscription, KrakenWsToken}
+import dodona.http.HttpClient
+import dodona.http.mappers.DodonaEnpoints
+import dodona.websocket.WebSocketClient
 /**
   * Temporary file so I can just quickly run this code if I want to for tests.
   * Will remove it soon.

@@ -1,33 +1,28 @@
 package dodona.strategies.meanreversion
 
-import dodona.http.IHttpClient
-import dodona.websocket.IWebSocketClient
-import dodona.http.mappers.DodonaEnpoints
-import dodona.constants.RequestTypes
-import akka.http.scaladsl.model.HttpMethods
-import dodona.json.binance.Decoders._
-import dodona.domain.dodona.http.CandlestickParams
-import scala.util.Success
-import scala.util.Failure
-import akka.actor.ActorSystem
-import dodona.domain.binance.market.Candlestick
-import org.ta4j.core.BaseBarSeriesBuilder
-import org.ta4j.core.indicators.EMAIndicator
-import java.time.ZonedDateTime
+import java.time.{ZoneId, ZonedDateTime}
 import java.{util => ju}
-import java.time.ZoneId
-import org.ta4j.core.indicators.helpers.ClosePriceIndicator
-import org.ta4j.core.indicators.RSIIndicator
-import org.ta4j.core.BaseBarSeries
-import akka.stream.scaladsl.Source
-import dodona.domain.binance.BinanceWsMessage
-import akka.stream.OverflowStrategy
-import akka.stream.scaladsl.Sink
-import akka.stream.scaladsl.Keep
+
+import scala.util.{Failure, Success}
+
+import akka.actor.ActorSystem
+import akka.http.scaladsl.model.HttpMethods
 import akka.http.scaladsl.model.ws.Message
+import akka.stream.OverflowStrategy
+import akka.stream.scaladsl.{Keep, Sink, Source}
 import dodona.constants.BinanceConstants.WS_RAW_STREAM_BASE_URL
+import dodona.constants.RequestTypes
+import dodona.domain.binance.BinanceWsMessage
+import dodona.domain.binance.market.{Candlestick, KlineCandlestickInterval}
+import dodona.domain.dodona.http.CandlestickParams
+import dodona.http.IHttpClient
+import dodona.http.mappers.DodonaEnpoints
+import dodona.json.binance.Decoders._
+import dodona.websocket.IWebSocketClient
 import io.circe.parser.decode
-import dodona.domain.binance.market.KlineCandlestickInterval
+import org.ta4j.core.indicators.EMAIndicator
+import org.ta4j.core.indicators.helpers.ClosePriceIndicator
+import org.ta4j.core.{BaseBarSeries, BaseBarSeriesBuilder}
 
 class MeanReversion(
     val httpClient: IHttpClient,
@@ -52,9 +47,8 @@ class MeanReversion(
         series =
           new BaseBarSeriesBuilder().withMaxBarCount(500).withName(pair).build()
         candles.foreach(addBarToSeries) 
-        openSocketConnection()
-        // println(series.getBarData().size())
-        // println(rsi.getValue(499))
+        //openSocketConnection()
+        println(series.getBarData().size())
       }
       case Failure(exception) => println(exception)
     }

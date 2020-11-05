@@ -1,9 +1,7 @@
 package dodona.http.mappers
 
-import dodona.domain.dodona.http.QueryParameters
-import dodona.domain.dodona.http.CandlestickParams
 import dodona.constants.Exchanges
-import dodona.domain.dodona.http.DefaultParams
+import dodona.domain.dodona.http.{CandlestickParams, DefaultParams, QueryParameters}
 
 object QueryParametersMapper {
   def binanceMatcher(params: QueryParameters): Map[String, String] =

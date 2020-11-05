@@ -1,10 +1,9 @@
 package dodona.backtester.lib.json
 
-import io.circe.Encoder, io.circe.generic.auto._
+import dodona.backtester.models.{BinanceCandlestick, CandlestickReturnType, KrakenCandlestick}
+import io.circe.Encoder
+import io.circe.generic.auto._
 import io.circe.syntax._
-import dodona.backtester.models.CandlestickReturnType
-import dodona.backtester.models.BinanceCandlestick
-import dodona.backtester.models.KrakenCandlestick
 
 object Encoders {
   lazy implicit val encodeCandlestickReturnType: Encoder[CandlestickReturnType] = Encoder.instance {

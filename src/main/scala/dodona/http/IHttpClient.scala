@@ -1,25 +1,16 @@
 package dodona.http
 
-import scala.concurrent.Future
-import akka.http.scaladsl.model.HttpMethod
+import scala.concurrent.{ExecutionContext, Future, Promise}
+
+import akka.http.scaladsl.model.Uri.Query
+import akka.http.scaladsl.model.headers.RawHeader
+import akka.http.scaladsl.model.{FormData, HttpEntity, HttpHeader, HttpMethod, RequestEntity, Uri}
+import dodona.DodonaConfig
+import dodona.constants.{Exchanges, RequestTypes}
+import dodona.domain.dodona.http.{DefaultParams, QueryParameters}
+import dodona.http.mappers.{EndpointsMapper, QueryParametersMapper}
 import io.circe.Decoder
 import io.circe.parser.decode
-import akka.http.scaladsl.model.HttpHeader
-import akka.http.scaladsl.model.RequestEntity
-import akka.http.scaladsl.model.HttpEntity
-import akka.http.scaladsl.model.Uri
-import akka.http.scaladsl.model.Uri.Query
-import dodona.DodonaConfig
-import dodona.constants.RequestTypes
-import dodona.constants.Exchanges
-import akka.http.scaladsl.model.headers.RawHeader
-import akka.http.scaladsl.model.FormData
-import dodona.http.mappers.EndpointsMapper
-import dodona.domain.dodona.http.QueryParameters
-import dodona.domain.dodona.http.DefaultParams
-import dodona.http.mappers.QueryParametersMapper
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Promise
 
 abstract class IHttpClient(val exchange: String) {
   def executeRequest[T: Decoder](

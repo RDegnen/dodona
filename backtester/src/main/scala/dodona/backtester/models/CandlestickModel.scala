@@ -1,12 +1,12 @@
 package dodona.backtester.models
 
+import scala.concurrent.{ExecutionContext, Future}
+
 import dodona.backtester.lib.db.DB
-import slick.lifted.TableQuery
 import dodona.backtester.lib.db.schema.Candlesticks
-import slick.driver.SQLiteDriver.api._
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
 import dodona.constants.Exchanges
+import slick.driver.SQLiteDriver.api._
+import slick.lifted.TableQuery
 
 class CandlestickModel(exchange: String) {
   private val db = DB.db

@@ -1,10 +1,10 @@
 package dodona.backtester.controllers
 
-import dodona.backtester.models.CandlestickModel
+import scala.concurrent.{ExecutionContext, Future}
+
 import dodona.backtester.lib.json.Encoders._
+import dodona.backtester.models.CandlestickModel
 import io.circe.syntax._
-import scala.concurrent.Future
-import scala.concurrent.ExecutionContext
 
 class CandlesticksController(exchange: String) {
   private val model = new CandlestickModel(exchange)

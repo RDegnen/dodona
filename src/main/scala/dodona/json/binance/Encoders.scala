@@ -1,7 +1,7 @@
 package dodona.json.binance
 
-import io.circe.Encoder
 import dodona.domain.binance._
+import io.circe.Encoder
 import io.circe.generic.semiauto._
 
 object Encoders {

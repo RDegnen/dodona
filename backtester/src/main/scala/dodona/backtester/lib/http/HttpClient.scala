@@ -1,16 +1,13 @@
-package dodona.backtester.http
+package dodona.backtester.lib.http
 
+import scala.concurrent.Future
+
+import akka.actor.ActorSystem
+import akka.http.scaladsl.model.Uri.Query
+import akka.http.scaladsl.model.{HttpEntity, HttpHeader, HttpMethod, RequestEntity, Uri}
+import dodona.backtester.controllers.CandlesticksController
 import dodona.http.IHttpClient
 import io.circe.Decoder
-import akka.http.scaladsl.model.HttpMethod
-import akka.http.scaladsl.model.Uri
-import akka.http.scaladsl.model.Uri.Query
-import akka.http.scaladsl.model.HttpHeader
-import akka.http.scaladsl.model.RequestEntity
-import akka.http.scaladsl.model.HttpEntity
-import scala.concurrent.Future
-import dodona.backtester.controllers.CandlesticksController
-import akka.actor.ActorSystem
 
 class HttpClient(override val exchange: String, val baseUrl: String) extends IHttpClient(exchange) {
   implicit val system = ActorSystem()

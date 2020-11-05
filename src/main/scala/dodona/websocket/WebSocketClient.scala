@@ -1,21 +1,16 @@
 package dodona.websocket
 
-import akka.actor.ActorSystem
-import akka.stream.scaladsl.Sink
-import akka.http.scaladsl.model.ws.Message
-import akka.http.scaladsl.model.ws.TextMessage
-import akka.stream.scaladsl.Source
-import akka.stream.scaladsl.Flow
-import akka.stream.scaladsl.Keep
-import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.ws.WebSocketRequest
-import io.circe.syntax._
 import scala.concurrent.Future
-import akka.Done
+
+import akka.actor.ActorSystem
+import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.StatusCodes
-import io.circe.Encoder
-import akka.NotUsed
+import akka.http.scaladsl.model.ws.{Message, TextMessage, WebSocketRequest}
 import akka.stream.ActorMaterializer
+import akka.stream.scaladsl.{Flow, Keep, Sink, Source}
+import akka.{Done, NotUsed}
+import io.circe.Encoder
+import io.circe.syntax._
 
 trait IWebSocketClient {
   def openSocket[WM: Encoder](

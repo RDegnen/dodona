@@ -1,10 +1,10 @@
 package dodona.http
 
+import java.security.MessageDigest
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
-import org.apache.commons.codec.binary.Hex
-import java.security.MessageDigest
-import org.apache.commons.codec.binary.Base64
+
+import org.apache.commons.codec.binary.{Base64, Hex}
 
 object HttpClientUtils {
   private val hmacSHA256 = "HmacSHA256"

@@ -1,5 +1,6 @@
 ThisBuild / scalaVersion := "2.13.3"
 ThisBuild / organization := "dodona"
+ThisBuild / scalafixDependencies += "com.github.liancheng" %% "organize-imports" % "0.4.3"
 
 inThisBuild(
   List(
@@ -45,5 +46,5 @@ lazy val dodonaBacktester = (project in file("backtester"))
       "com.typesafe.slick" %% "slick-hikaricp" % SlickVersion,
       "org.xerial" % "sqlite-jdbc" % "3.32.3.2"
     ),
-    scalacOptions += "-Ywarn-unused:imports",
+    scalacOptions += "-Ywarn-unused:imports"
   )

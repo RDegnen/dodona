@@ -1,18 +1,14 @@
 package dodona.http
 
-import akka.actor.ActorSystem
 import scala.concurrent.Future
+
+import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.HttpRequest
-import akka.http.scaladsl.model.HttpMethod
-import akka.stream.ActorMaterializer
-import akka.http.scaladsl.unmarshalling.Unmarshal
-import io.circe.Decoder
-import akka.http.scaladsl.model.HttpHeader
-import akka.http.scaladsl.model.RequestEntity
-import akka.http.scaladsl.model.HttpEntity
-import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.model.Uri.Query
+import akka.http.scaladsl.model.{HttpEntity, HttpHeader, HttpMethod, HttpRequest, RequestEntity, Uri}
+import akka.http.scaladsl.unmarshalling.Unmarshal
+import akka.stream.ActorMaterializer
+import io.circe.Decoder
 
 class HttpClient(override val exchange: String, val baseUrl: String) extends IHttpClient(exchange) {
   def executeRequest[T: Decoder](

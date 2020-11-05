@@ -1,12 +1,11 @@
 package dodona
 
-import akka.actor.ActorSystem
 import com.typesafe.config.ConfigFactory
-import dodona.http.HttpClient
-import dodona.constants.Exchanges
 import dodona.constants.BinanceConstants.API_BASE_URL
-import dodona.websocket.WebSocketClient
+import dodona.constants.Exchanges
+import dodona.http.HttpClient
 import dodona.strategies.meanreversion.MeanReversion
+import dodona.websocket.WebSocketClient
 
 object DodonaConfig {
   val conf = ConfigFactory.load()

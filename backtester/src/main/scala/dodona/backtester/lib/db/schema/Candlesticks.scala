@@ -1,7 +1,7 @@
 package dodona.backtester.lib.db.schema
 
-import slick.lifted.Tag
 import slick.driver.SQLiteDriver.api._
+import slick.lifted.Tag
 
 class Candlesticks(tag: Tag) extends Table[Candlestick](tag, "candlesticks") {
   def id = column[Int]("id", O.PrimaryKey, O.AutoInc)

@@ -1,9 +1,9 @@
 package dodona.json.binance
 
-import io.circe.Decoder
 import dodona.domain.binance._
 import dodona.domain.binance.account._
 import dodona.domain.binance.market._
+import io.circe.Decoder
 import io.circe.generic.semiauto._
 
 object Decoders {

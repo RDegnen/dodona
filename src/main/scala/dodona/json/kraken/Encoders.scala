@@ -1,7 +1,7 @@
 package dodona.json.kraken
 
-import io.circe.Encoder
 import dodona.domain.kraken._
+import io.circe.Encoder
 import io.circe.generic.semiauto._
 
 object Encoders {
