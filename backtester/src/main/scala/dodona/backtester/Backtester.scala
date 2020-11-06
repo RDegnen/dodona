@@ -1,12 +1,13 @@
 package dodona.backtester
 
-import com.typesafe.config.ConfigFactory
+import scala.io.StdIn
+
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.Directives._
-import dodona.backtester.routes.CandlestickRoutes
-import scala.io.StdIn
+import akka.http.scaladsl.server.Route
+import com.typesafe.config.ConfigFactory
+import dodona.backtester.routes.{CandlestickRoutes, SpreadRoutes}
 
 object BacktesterConfig {
   val conf = ConfigFactory.load()
@@ -19,8 +20,12 @@ object Backtester extends App {
   implicit val executionContext = system.dispatcher
 
   val candlestickRoutes = new CandlestickRoutes()
-  val routes: Route = pathPrefix("backtester") {
-    concat(candlestickRoutes.routes)
+  val spreadRoutes = new SpreadRoutes()
+  val routes: Route = {
+    concat(
+      candlestickRoutes.routes,
+      spreadRoutes.routes
+    )
   }
   val binding = Http().newServerAt("localhost", BacktesterConfig.PORT).bind(routes)
 

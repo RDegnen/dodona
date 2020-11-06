@@ -1,12 +1,10 @@
 package dodona
 
 import com.typesafe.config.ConfigFactory
-import dodona.constants.BinanceConstants.API_BASE_URL
-import dodona.constants.Exchanges
+import dodona.constants.{DodonaConstants, Exchanges}
 import dodona.lib.http.HttpClient
 import dodona.lib.websocket.WebSocketClient
 import dodona.strategies.meanreversion.MeanReversion
-import dodona.constants.DodonaConstants
 
 object DodonaConfig {
   val conf = ConfigFactory.load()

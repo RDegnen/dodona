@@ -1,8 +1,10 @@
 package dodona.backtester.lib.json
 
+import dodona.backtester.lib.db.schema.Spread
 import dodona.backtester.models.{BinanceCandlestick, CandlestickReturnType, KrakenCandlestick}
 import io.circe.Encoder
 import io.circe.generic.auto._
+import io.circe.generic.semiauto._
 import io.circe.syntax._
 
 object Encoders {
@@ -12,4 +14,5 @@ object Encoders {
     }
     case krakenCandlestick @ KrakenCandlestick() => krakenCandlestick.asJson
   }
+  lazy implicit val SpreadEncoder: Encoder[Spread] = deriveEncoder
 }
