@@ -21,11 +21,10 @@ class SpreadModel {
 
     db.run(query).map(spreads => {
       val source = Source(spreads)
-        .throttle(1, 1.second)
+        // .throttle(1, 1.second)
         .map(m => TextMessage(m.asJson.toString()))
-      val sink = Sink.ignore
 
-      Flow.fromSinkAndSource(sink, source)
+      Flow.fromSinkAndSource(Sink.ignore, source)
     })
   }
 }

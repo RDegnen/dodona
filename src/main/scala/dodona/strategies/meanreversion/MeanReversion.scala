@@ -10,11 +10,11 @@ import akka.http.scaladsl.model.HttpMethods
 import akka.http.scaladsl.model.ws.Message
 import akka.stream.OverflowStrategy
 import akka.stream.scaladsl.{Keep, Sink, Source}
-import dodona.constants.BinanceConstants.WS_RAW_STREAM_BASE_URL
+import dodona.constants.DodonaConstants.BACKTESTER_WS_URL
 import dodona.constants.RequestTypes
-import dodona.lib.domain.binance.BinanceWsMessage
-import dodona.lib.domain.binance.market.{Candlestick, KlineCandlestickInterval}
+import dodona.lib.domain.binance.market.Candlestick
 import dodona.lib.domain.dodona.http.CandlestickParams
+import dodona.lib.domain.dodona.market.Spread
 import dodona.lib.http.IHttpClient
 import dodona.lib.http.mappers.DodonaEnpoints
 import dodona.lib.json.binance.Decoders._
@@ -47,7 +47,7 @@ class MeanReversion(
         series =
           new BaseBarSeriesBuilder().withMaxBarCount(500).withName(pair).build()
         candles.foreach(addBarToSeries) 
-        //openSocketConnection()
+        openSocketConnection()
         println(series.getBarData().size())
       }
       case Failure(exception) => println(exception)
@@ -55,7 +55,6 @@ class MeanReversion(
   }
 
   def addBarToSeries(candlestick: Candlestick): Unit = {
-    println("adding bar")
     val instant = new ju.Date(candlestick.closeTime).toInstant()
     val zdt = ZonedDateTime.ofInstant(instant, ZoneId.systemDefault())
     series.addBar(
@@ -76,23 +75,18 @@ class MeanReversion(
   }
 
   def onMessage(message: Message): Unit = {
-    println("Incoming message", message)
-    decode[KlineCandlestickInterval](message.asTextMessage.getStrictText) match {
-      case Right(value) => {
-        val kc = value.k
-        val candlestick = Candlestick(kc.t, kc.o, kc.h, kc.l, kc.c, kc.v, kc.T)
-        addBarToSeries(candlestick)
-        calculateIndicators()
+    decode[Spread](message.asTextMessage.getStrictText) match {
+      case Right(spread) => {
+        println(spread)
       }
       case Left(err) => println(err)
     }
   }
 
   def openSocketConnection(): Unit = {
-    import dodona.lib.json.binance.Encoders._
     val wsPair = pair.toLowerCase()
     val (ref, publisher) = Source
-      .actorRef[BinanceWsMessage](
+      .actorRef[Spread](
         bufferSize = 100,
         overflowStrategy = OverflowStrategy.dropBuffer
       )
@@ -102,14 +96,14 @@ class MeanReversion(
     val source = Source.fromPublisher(publisher)
     val sink = Sink.foreach[Message](onMessage)
 
-    val (connected, closed) = websocketClient.openSocket[BinanceWsMessage](
-      s"$WS_RAW_STREAM_BASE_URL/$wsPair@kline_$interval",
+    val (connected, closed) = websocketClient.openSocket[Spread](
+      s"$BACKTESTER_WS_URL/spread",
       source,
       sink
     )
     connected.onComplete {
       case Success(_) => {
-        println("binance socket open")
+        println("Socket open")
       }
       case Failure(exception) => println(exception)
     }

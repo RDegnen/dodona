@@ -16,7 +16,10 @@ object DodonaConfig {
 }
 
 object Dodona extends App {
-  val binanceHttpClient = new HttpClient(Exchanges.BACKTESTER, DodonaConstants.BACKTESTER_BASE_URL)
+  val binanceHttpClient = new HttpClient(
+    Exchanges.BACKTESTER, 
+    DodonaConstants.BACKTESTER_BASE_URL
+  )
   val binanceWebsocketClient = new WebSocketClient()
   val strategy = new MeanReversion(
     binanceHttpClient,
