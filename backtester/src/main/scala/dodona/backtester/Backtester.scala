@@ -7,7 +7,7 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import com.typesafe.config.ConfigFactory
-import dodona.backtester.routes.{CandlestickRoutes, SpreadRoutes}
+import dodona.backtester.routes.{CandlestickRoutes, SpreadRoutes, TradeRoutes}
 
 object BacktesterConfig {
   val conf = ConfigFactory.load()
@@ -21,12 +21,15 @@ object Backtester extends App {
 
   val candlestickRoutes = new CandlestickRoutes()
   val spreadRoutes = new SpreadRoutes()
+  val tradeRoutes = new TradeRoutes()
   val routes: Route = {
     concat(
       candlestickRoutes.routes,
-      spreadRoutes.routes
+      spreadRoutes.routes,
+      tradeRoutes.routes
     )
   }
+  
   val binding = Http().newServerAt("localhost", BacktesterConfig.PORT).bind(routes)
 
   println(s"Server running at port ${BacktesterConfig.PORT}")

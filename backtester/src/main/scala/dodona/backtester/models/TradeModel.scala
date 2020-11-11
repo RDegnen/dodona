@@ -7,20 +7,20 @@ import akka.NotUsed
 import akka.http.scaladsl.model.ws.{Message, TextMessage}
 import akka.stream.scaladsl.{Flow, Sink, Source}
 import dodona.backtester.lib.db.DB
-import dodona.backtester.lib.db.schema.Spreads
+import dodona.backtester.lib.db.schema.Trades
 import io.circe.syntax._
 import slick.driver.SQLiteDriver.api._
 import slick.lifted.TableQuery
 
-class SpreadModel {
+class TradeModel {
   private val db = DB.db
 
-  def streamSpreads()(implicit ec: ExecutionContext): Future[Flow[Message, Message, NotUsed]] = {
-    val spreads = TableQuery[Spreads]
-    val query = spreads.result
+  def streamTrades()(implicit ec: ExecutionContext): Future[Flow[Message, Message, NotUsed]] = {
+    val trades = TableQuery[Trades]
+    val query = trades.result
 
-    db.run(query).map(spreads => {
-      val source = Source(spreads)
+    db.run(query).map(trades => {
+      val source = Source(trades)
         .throttle(1, 1.millisecond)
         .map(m => TextMessage(m.asJson.toString()))
 

@@ -3,16 +3,16 @@ package dodona.backtester.routes
 import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Success}
 
-import _root_.dodona.backtester.models.SpreadModel
+import _root_.dodona.backtester.models.TradeModel
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 
-class SpreadRoutes(implicit ec: ExecutionContext) {
-  private val model = new SpreadModel()
-  
+class TradeRoutes(implicit ec: ExecutionContext) {
+  private val model = new TradeModel()
+
   lazy val routes: Route = {
-    path("spread") {
-      onComplete(model.streamSpreads()) {
+    path("trade") {
+      onComplete(model.streamTrades()) {
         case Failure(exception) => complete(exception)
         case Success(value) => handleWebSocketMessages(value)
       }
