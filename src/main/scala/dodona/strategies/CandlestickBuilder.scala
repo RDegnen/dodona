@@ -4,15 +4,31 @@ import dodona.lib.domain.dodona.market.Trade
 import java.time._
 import java.util.Date
 import java.time.temporal.ChronoUnit
+import dodona.lib.domain.dodona.market.Candlestick
 
 class CandlestickBuilder(interval: Int) {
   private var values: Seq[Trade] = Seq.empty
 
-  def build(trade: Trade): Unit = {
+  def addTrade(trade: Trade): Option[Candlestick] = {
     values = values :+ trade
     val ldt1 = getLocalDateTime(values.head.time)
     val ldt2 = getLocalDateTime(values.last.time)
-    println(getTimeDifference(ldt1, ldt2))
+    val diff = getTimeDifference(ldt1, ldt2)
+    if (diff >= interval) {
+      val prices = values.map(_.price)
+      val candlestick = Candlestick(
+        values.head.time,
+        values.last.time,
+        prices.head,
+        prices.max,
+        prices.min,
+        prices.last
+      )
+      values = values.drop(values.length)
+      Some(candlestick)
+    } else {
+      None
+    }
   }
 
   private def getLocalDateTime(long: Long): LocalDateTime = {
@@ -20,6 +36,9 @@ class CandlestickBuilder(interval: Int) {
     LocalDateTime.ofInstant(date.toInstant(), ZoneId.systemDefault())
   }
 
-  private def getTimeDifference(ldt1: LocalDateTime, ldt2: LocalDateTime): Long =
+  private def getTimeDifference(
+      ldt1: LocalDateTime,
+      ldt2: LocalDateTime
+  ): Long =
     ldt1.until(ldt2, ChronoUnit.MINUTES)
 }

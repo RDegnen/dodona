@@ -12,11 +12,9 @@ import akka.stream.OverflowStrategy
 import akka.stream.scaladsl.{Keep, Sink, Source}
 import dodona.constants.DodonaConstants.BACKTESTER_WS_URL
 import dodona.constants.RequestTypes
-import dodona.lib.domain.binance.market.Candlestick
 import dodona.lib.domain.dodona.http.CandlestickParams
 import dodona.lib.http.IHttpClient
 import dodona.lib.http.mappers.DodonaEnpoints
-import dodona.lib.json.binance.Decoders._
 import dodona.lib.websocket.IWebSocketClient
 import io.circe.parser.decode
 import org.ta4j.core.indicators.EMAIndicator
@@ -24,6 +22,7 @@ import org.ta4j.core.indicators.helpers.ClosePriceIndicator
 import org.ta4j.core.{BaseBarSeries, BaseBarSeriesBuilder}
 import dodona.lib.domain.dodona.market.Trade
 import dodona.strategies.CandlestickBuilder
+import dodona.lib.domain.dodona.market.Candlestick
 
 class MeanReversion(
     val httpClient: IHttpClient,
@@ -33,15 +32,15 @@ class MeanReversion(
   implicit val system = ActorSystem()
   implicit val executionContext = system.dispatcher
   private var series: BaseBarSeries = _
-  private val interval = "15m"
-  private val candlestickBuilder = new CandlestickBuilder(15)
+  private val interval = 15
+  private val candlestickBuilder = new CandlestickBuilder(interval)
 
   def run(): Unit = {
     val candlesticks = httpClient.request[List[Candlestick]](
       RequestTypes.PUBLIC,
       HttpMethods.GET,
       DodonaEnpoints.CANDLESTICKS,
-      CandlestickParams(pair, interval)
+      CandlestickParams(pair, s"${interval}m")
     )
 
     candlesticks.onComplete {
@@ -64,22 +63,28 @@ class MeanReversion(
       candlestick.open,
       candlestick.high,
       candlestick.low,
-      candlestick.close,
-      candlestick.volume
+      candlestick.close
     )
   }
 
   def calculateIndicators(): Unit = {
     val closePriceIndicator = new ClosePriceIndicator(series)
-    val shortEma = new EMAIndicator(closePriceIndicator, 14)
-    val longEma = new EMAIndicator(closePriceIndicator, 50)
+    val shortEma = new EMAIndicator(closePriceIndicator, 12)
+    val longEma = new EMAIndicator(closePriceIndicator, 26)
     println(shortEma.getValue(499), longEma.getValue(499))
   }
 
   def onMessage(message: Message): Unit = {
     decode[Trade](message.asTextMessage.getStrictText) match {
       case Right(trade) => {
-        candlestickBuilder.build(trade)
+        candlestickBuilder.addTrade(trade) match {
+          case Some(c) => {
+            println(c)
+            addBarToSeries(c)
+            calculateIndicators()
+          }
+          case None =>
+        }
       }
       case Left(err) => println(err)
     }
