@@ -11,6 +11,7 @@ import dodona.backtester.lib.db.schema.Trades
 import io.circe.syntax._
 import slick.driver.SQLiteDriver.api._
 import slick.lifted.TableQuery
+import dodona.backtester.lib.domain.Trade
 
 class TradeModel {
   private val db = DB.db
@@ -22,6 +23,7 @@ class TradeModel {
     db.run(query).map(trades => {
       val source = Source(trades)
         .throttle(1, 1.millisecond)
+        .map(m => Trade(m._1, m._2, m._3, m._4, m._5, m._6))
         .map(m => TextMessage(m.asJson.toString()))
 
       Flow.fromSinkAndSource(Sink.ignore, source)

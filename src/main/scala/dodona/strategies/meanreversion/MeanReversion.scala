@@ -14,7 +14,6 @@ import dodona.constants.DodonaConstants.BACKTESTER_WS_URL
 import dodona.constants.RequestTypes
 import dodona.lib.domain.binance.market.Candlestick
 import dodona.lib.domain.dodona.http.CandlestickParams
-import dodona.lib.domain.dodona.market.Spread
 import dodona.lib.http.IHttpClient
 import dodona.lib.http.mappers.DodonaEnpoints
 import dodona.lib.json.binance.Decoders._
@@ -23,6 +22,8 @@ import io.circe.parser.decode
 import org.ta4j.core.indicators.EMAIndicator
 import org.ta4j.core.indicators.helpers.ClosePriceIndicator
 import org.ta4j.core.{BaseBarSeries, BaseBarSeriesBuilder}
+import dodona.lib.domain.dodona.market.Trade
+import dodona.strategies.CandlestickBuilder
 
 class MeanReversion(
     val httpClient: IHttpClient,
@@ -33,6 +34,7 @@ class MeanReversion(
   implicit val executionContext = system.dispatcher
   private var series: BaseBarSeries = _
   private val interval = "15m"
+  private val candlestickBuilder = new CandlestickBuilder(15)
 
   def run(): Unit = {
     val candlesticks = httpClient.request[List[Candlestick]](
@@ -75,9 +77,9 @@ class MeanReversion(
   }
 
   def onMessage(message: Message): Unit = {
-    decode[Spread](message.asTextMessage.getStrictText) match {
-      case Right(spread) => {
-        println(spread)
+    decode[Trade](message.asTextMessage.getStrictText) match {
+      case Right(trade) => {
+        candlestickBuilder.build(trade)
       }
       case Left(err) => println(err)
     }
@@ -86,7 +88,7 @@ class MeanReversion(
   def openSocketConnection(): Unit = {
     val wsPair = pair.toLowerCase()
     val (ref, publisher) = Source
-      .actorRef[Spread](
+      .actorRef[Trade](
         bufferSize = 100,
         overflowStrategy = OverflowStrategy.dropBuffer
       )
@@ -96,8 +98,8 @@ class MeanReversion(
     val source = Source.fromPublisher(publisher)
     val sink = Sink.foreach[Message](onMessage)
 
-    val (connected, closed) = websocketClient.openSocket[Spread](
-      s"$BACKTESTER_WS_URL/spread",
+    val (connected, closed) = websocketClient.openSocket[Trade](
+      s"$BACKTESTER_WS_URL/trade",
       source,
       sink
     )
