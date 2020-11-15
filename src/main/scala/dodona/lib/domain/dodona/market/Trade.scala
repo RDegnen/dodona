@@ -1,8 +1,7 @@
 package dodona.lib.domain.dodona.market
 
 import io.circe.generic.semiauto._
-import io.circe.Decoder
-import io.circe.Encoder
+import io.circe.{Decoder, Encoder}
 
 case class Trade(
   id: Int,

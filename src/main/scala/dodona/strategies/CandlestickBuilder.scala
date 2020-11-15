@@ -1,10 +1,10 @@
 package dodona.strategies
 
-import dodona.lib.domain.dodona.market.Trade
 import java.time._
-import java.util.Date
 import java.time.temporal.ChronoUnit
-import dodona.lib.domain.dodona.market.Candlestick
+import java.util.Date
+
+import dodona.lib.domain.dodona.market.{Candlestick, Trade}
 
 class CandlestickBuilder(interval: Int) {
   private var values: Seq[Trade] = Seq.empty

@@ -1,5 +1,6 @@
 package dodona
 
+import akka.actor.ActorSystem
 import com.typesafe.config.ConfigFactory
 import dodona.constants.{DodonaConstants, Exchanges}
 import dodona.lib.http.HttpClient
@@ -16,6 +17,9 @@ object DodonaConfig {
 }
 
 object Dodona extends App {
+  implicit val system = ActorSystem()
+  implicit val ec = system.dispatcher
+
   val binanceHttpClient = new HttpClient(
     Exchanges.BACKTESTER, 
     DodonaConstants.BACKTESTER_BASE_URL
@@ -24,7 +28,8 @@ object Dodona extends App {
   val strategy = new MeanReversion(
     binanceHttpClient,
     binanceWebsocketClient,
-    "BTCUSD"
+    "BTCUSD",
+    15
   )
 
   strategy.run()

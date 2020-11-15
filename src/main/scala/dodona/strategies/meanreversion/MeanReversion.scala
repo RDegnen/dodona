@@ -3,6 +3,7 @@ package dodona.strategies.meanreversion
 import java.time.{ZoneId, ZonedDateTime}
 import java.{util => ju}
 
+import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Success}
 
 import akka.actor.ActorSystem
@@ -13,27 +14,29 @@ import akka.stream.scaladsl.{Keep, Sink, Source}
 import dodona.constants.DodonaConstants.BACKTESTER_WS_URL
 import dodona.constants.RequestTypes
 import dodona.lib.domain.dodona.http.CandlestickParams
+import dodona.lib.domain.dodona.market.{Candlestick, Trade}
 import dodona.lib.http.IHttpClient
 import dodona.lib.http.mappers.DodonaEnpoints
 import dodona.lib.websocket.IWebSocketClient
+import dodona.strategies.CandlestickBuilder
 import io.circe.parser.decode
 import org.ta4j.core.indicators.EMAIndicator
 import org.ta4j.core.indicators.helpers.ClosePriceIndicator
-import org.ta4j.core.{BaseBarSeries, BaseBarSeriesBuilder}
-import dodona.lib.domain.dodona.market.Trade
-import dodona.strategies.CandlestickBuilder
-import dodona.lib.domain.dodona.market.Candlestick
+import org.ta4j.core.trading.rules.{CrossedDownIndicatorRule, CrossedUpIndicatorRule}
+import org.ta4j.core.{BaseBarSeries, BaseBarSeriesBuilder, BaseStrategy}
 
 class MeanReversion(
     val httpClient: IHttpClient,
     val websocketClient: IWebSocketClient,
-    val pair: String
-) {
-  implicit val system = ActorSystem()
-  implicit val executionContext = system.dispatcher
+    val pair: String,
+    val interval: Int
+)(implicit val system: ActorSystem, ec: ExecutionContext) {
   private var series: BaseBarSeries = _
-  private val interval = 15
+  private var strategy: BaseStrategy = _
   private val candlestickBuilder = new CandlestickBuilder(interval)
+  // For testing
+  private var entered = false
+  private var exited = true
 
   def run(): Unit = {
     val candlesticks = httpClient.request[List[Candlestick]](
@@ -47,7 +50,8 @@ class MeanReversion(
       case Success(candles) => {
         series =
           new BaseBarSeriesBuilder().withMaxBarCount(500).withName(pair).build()
-        candles.foreach(addBarToSeries) 
+        candles.foreach(addBarToSeries)
+        setUpStrategy()
         openSocketConnection()
         println(series.getBarData().size())
       }
@@ -55,7 +59,16 @@ class MeanReversion(
     }
   }
 
-  def addBarToSeries(candlestick: Candlestick): Unit = {
+  private def setUpStrategy(): Unit = {
+    val closePriceIndicator = new ClosePriceIndicator(series)
+    val shortEma = new EMAIndicator(closePriceIndicator, 7)
+    val longEma = new EMAIndicator(closePriceIndicator, 25)
+    val entryRule = new CrossedUpIndicatorRule(shortEma, longEma)
+    val exitRule = new CrossedDownIndicatorRule(shortEma, longEma)
+    strategy = new BaseStrategy("Cross", entryRule, exitRule)
+  }
+
+  private def addBarToSeries(candlestick: Candlestick): Unit = {
     val instant = new ju.Date(candlestick.closeTime).toInstant()
     val zdt = ZonedDateTime.ofInstant(instant, ZoneId.systemDefault())
     series.addBar(
@@ -67,30 +80,49 @@ class MeanReversion(
     )
   }
 
-  def calculateIndicators(): Unit = {
-    val closePriceIndicator = new ClosePriceIndicator(series)
-    val shortEma = new EMAIndicator(closePriceIndicator, 12)
-    val longEma = new EMAIndicator(closePriceIndicator, 26)
-    println(shortEma.getValue(499), longEma.getValue(499))
+  private def checkEntryOrExit(): Unit = {
+    val endIndex = series.getEndIndex()
+    val lastBar = series.getBar(endIndex)
+    if (strategy.shouldEnter(endIndex)) {
+      // println("Should enter", lastBar.getClosePrice())
+      if (!entered) {
+        if (exited) {
+          println(s"Entering at ${lastBar.getClosePrice()} - ${lastBar.getEndTime()}")
+          entered = true
+          exited = false
+        }
+      }
+    } else if (strategy.shouldExit(endIndex)) {
+      // println("Should exit", lastBar.getClosePrice())
+      if (!exited) {
+        if (entered) {
+          println(s"Exiting at ${lastBar.getClosePrice()} - ${lastBar.getEndTime()}")
+          entered = false
+          exited = true
+        }
+      }
+    }
   }
 
-  def onMessage(message: Message): Unit = {
+  private def onMessage(message: Message): Unit = {
     decode[Trade](message.asTextMessage.getStrictText) match {
       case Right(trade) => {
         candlestickBuilder.addTrade(trade) match {
           case Some(c) => {
-            println(c)
             addBarToSeries(c)
-            calculateIndicators()
+            checkEntryOrExit()
           }
-          case None =>
+          case None => {
+            series.addPrice(trade.price)
+            checkEntryOrExit()
+          }
         }
       }
       case Left(err) => println(err)
     }
   }
 
-  def openSocketConnection(): Unit = {
+  private def openSocketConnection(): Unit = {
     val wsPair = pair.toLowerCase()
     val (ref, publisher) = Source
       .actorRef[Trade](
