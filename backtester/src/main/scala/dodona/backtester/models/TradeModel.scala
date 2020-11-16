@@ -1,7 +1,6 @@
 package dodona.backtester.models
 
 import scala.concurrent.duration._
-import scala.concurrent.{ExecutionContext, Future}
 
 import akka.NotUsed
 import akka.http.scaladsl.model.ws.{Message, TextMessage}
@@ -12,21 +11,26 @@ import io.circe.syntax._
 import slick.driver.SQLiteDriver.api._
 import slick.lifted.TableQuery
 import dodona.backtester.lib.domain.Trade
+import slick.basic.DatabasePublisher
+import scala.concurrent.ExecutionContext
 
 class TradeModel {
   private val db = DB.db
 
-  def streamTrades()(implicit ec: ExecutionContext): Future[Flow[Message, Message, NotUsed]] = {
+  def streamTradesBySymbol(
+      symbol: String
+  )(implicit ec: ExecutionContext): Flow[Message, Message, NotUsed] = {
     val trades = TableQuery[Trades]
-    val query = trades.result
+    val query = trades.filter(_.symbol === symbol).result
+    val p: DatabasePublisher[
+      (Int, BigDecimal, BigDecimal, BigDecimal, Long, String)
+    ] = db.stream(query.transactionally.withStatementParameters(fetchSize = 5000))
 
-    db.run(query).map(trades => {
-      val source = Source(trades)
-        .throttle(1, 1.millisecond)
-        .map(m => Trade(m._1, m._2, m._3, m._4, m._5, m._6))
-        .map(m => TextMessage(m.asJson.toString()))
+    val source = Source.fromPublisher(p)
+      .throttle(1, 1.millisecond)
+      .map(m => Trade(m._1, m._2, m._3, m._4, m._5, m._6))
+      .map(m => TextMessage(m.asJson.toString()))
 
-      Flow.fromSinkAndSource(Sink.ignore, source)
-    })
+    Flow.fromSinkAndSource(Sink.ignore, source)
   }
 }

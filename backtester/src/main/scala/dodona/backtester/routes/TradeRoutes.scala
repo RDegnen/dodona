@@ -1,7 +1,6 @@
 package dodona.backtester.routes
 
 import scala.concurrent.ExecutionContext
-import scala.util.{Failure, Success}
 
 import _root_.dodona.backtester.models.TradeModel
 import akka.http.scaladsl.server.Directives._
@@ -12,9 +11,8 @@ class TradeRoutes(implicit ec: ExecutionContext) {
 
   lazy val routes: Route = {
     path("trade") {
-      onComplete(model.streamTrades()) {
-        case Failure(exception) => complete(exception)
-        case Success(value) => handleWebSocketMessages(value)
+      parameters("symbol") { (symbol) =>
+        handleWebSocketMessages(model.streamTradesBySymbol(symbol))
       }
     }
   }

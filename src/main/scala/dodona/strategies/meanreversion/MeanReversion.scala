@@ -136,7 +136,7 @@ class MeanReversion(
     val sink = Sink.foreach[Message](onMessage)
 
     val (connected, closed) = websocketClient.openSocket[Trade](
-      s"$BACKTESTER_WS_URL/trade",
+      s"$BACKTESTER_WS_URL/trade?symbol=${pair}",
       source,
       sink
     )

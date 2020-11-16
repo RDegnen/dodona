@@ -16,10 +16,12 @@ class CandlestickRoutes(implicit ec: ExecutionContext) {
     pathPrefix("candlesticks") {
       concat(
         path("OHLC") {
-          get {
-            onComplete(model.getOHLC()) {
-              case Failure(exception) => complete(exception)
-              case Success(value) => complete(value.asJson.toString())
+          parameters("symbol") { (symbol) =>
+            get {
+              onComplete(model.getOHLCbySymbol(symbol)) {
+                case Failure(exception) => complete(exception)
+                case Success(value) => complete(value.asJson.toString())
+              }
             }
           }
         }

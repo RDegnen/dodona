@@ -10,9 +10,9 @@ import slick.lifted.TableQuery
 class CandlestickModel() {
   private val db = DB.db
 
-  def getOHLC()(implicit ec: ExecutionContext): Future[Seq[CandlestickReturnType]] = {
+  def getOHLCbySymbol(symbol: String)(implicit ec: ExecutionContext): Future[Seq[CandlestickReturnType]] = {
     val candlesticks = TableQuery[Candlesticks]
-    val query = candlesticks.result
+    val query = candlesticks.filter(_.symbol === symbol).result
 
     db.run(query).map(candlesticks => {
       candlesticks.map(cs => {
