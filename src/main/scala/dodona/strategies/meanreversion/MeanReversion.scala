@@ -84,7 +84,6 @@ class MeanReversion(
     val endIndex = series.getEndIndex()
     val lastBar = series.getBar(endIndex)
     if (strategy.shouldEnter(endIndex)) {
-      // println("Should enter", lastBar.getClosePrice())
       if (!entered) {
         if (exited) {
           println(s"Entering at ${lastBar.getClosePrice()} - ${lastBar.getEndTime()}")
@@ -93,7 +92,6 @@ class MeanReversion(
         }
       }
     } else if (strategy.shouldExit(endIndex)) {
-      // println("Should exit", lastBar.getClosePrice())
       if (!exited) {
         if (entered) {
           println(s"Exiting at ${lastBar.getClosePrice()} - ${lastBar.getEndTime()}")
@@ -136,7 +134,7 @@ class MeanReversion(
     val sink = Sink.foreach[Message](onMessage)
 
     val (connected, closed) = websocketClient.openSocket[Trade](
-      s"$BACKTESTER_WS_URL/trade?symbol=${pair}",
+      s"$BACKTESTER_WS_URL/trade?symbol=${pair}&timeToBegin=1569222899999",
       source,
       sink
     )

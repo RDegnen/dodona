@@ -11,8 +11,11 @@ class TradeRoutes(implicit ec: ExecutionContext) {
 
   lazy val routes: Route = {
     path("trade") {
-      parameters("symbol") { (symbol) =>
-        handleWebSocketMessages(model.streamTradesBySymbol(symbol))
+      parameters("symbol", "timeToBegin".withDefault("0")) {
+        (symbol, timeToBegin) =>
+          handleWebSocketMessages(
+            model.streamTradesBySymbolAndTime(symbol, timeToBegin.toLong)
+          )
       }
     }
   }

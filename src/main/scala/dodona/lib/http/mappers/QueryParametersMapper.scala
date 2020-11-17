@@ -22,7 +22,7 @@ object QueryParametersMapper {
     params match {
       case DefaultParams() => Map()
       case CandlestickParams(pair, interval) =>
-        Map("pair" -> pair, "interval" -> interval)
+        Map("symbol" -> pair, "interval" -> interval)
     }
 
   def convertParamsToMap(exchange: String, params: QueryParameters): Map[String, String] =
