@@ -8,11 +8,7 @@
     val resposne = client.request[KrakenResponse[KrakenWsToken]](
       RequestTypes.SIGNED,
       HttpMethods.POST,
-      "/0/private/GetWebSocketsToken",
-      Map(),
-      headers = Seq(
-        RawHeader("API-Key", DodonaConfig.KRAKEN_KEY)
-      )
+      DodonaEnpoints.WEBSOCKET_TOKEN
     )
 
     val (ref, publisher) = Source
@@ -50,11 +46,8 @@
     val getListenKey = client.request[BinanceListenKey](
       RequestTypes.PUBLIC,
       HttpMethods.POST,
-      "/api/v3/userDataStream",
-      Map(),
-      headers = Seq(
-        RawHeader("X-MBX-APIKEY", DodonaConfig.BINANCE_US_KEY)
-      )
+      DodonaEnpoints.WEBSOCKET_TOKEN,
+      headers = Seq(RawHeader("X-MBX-APIKEY", DodonaConfig.BINANCE_US_KEY))
     )
 
     val (ref, publisher) = Source
@@ -80,3 +73,6 @@
     }
   }
 ```
+### Random notes
+Binance kline/candlestick connection 
+`wss://stream.binance.us:9443/ws/btcusd@kline_1m`
