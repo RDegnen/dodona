@@ -12,11 +12,11 @@ import io.circe.syntax._
 class CandlestickRoutes(implicit ec: ExecutionContext) {
   private val model = new CandlestickModel()
 
-  lazy val routes: Route = {
+  lazy val apiRoutes: Route = {
     pathPrefix("candlesticks") {
       concat(
         path("OHLC") {
-          parameters("symbol") { (symbol) =>
+          parameters("symbol") { symbol =>
             get {
               onComplete(model.getOHLCbySymbol(symbol)) {
                 case Failure(exception) => complete(exception)

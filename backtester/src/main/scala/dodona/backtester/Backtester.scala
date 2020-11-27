@@ -2,12 +2,13 @@ package dodona.backtester
 
 import scala.io.StdIn
 
-import akka.actor.ActorSystem
+import akka.actor.typed.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import com.typesafe.config.ConfigFactory
-import dodona.backtester.routes.{CandlestickRoutes, SpreadRoutes, TradeRoutes}
+import dodona.backtester.actors.MainSystem
+import dodona.backtester.routes.{AccountRoutes, CandlestickRoutes, TradeRoutes}
 
 object BacktesterConfig {
   val conf = ConfigFactory.load()
@@ -16,18 +17,27 @@ object BacktesterConfig {
 }
 
 object Backtester extends App {
-  implicit val system = ActorSystem()
-  implicit val executionContext = system.dispatcher
+  implicit val system = ActorSystem(MainSystem(), "main")
+  implicit val ec = system.executionContext
 
   val candlestickRoutes = new CandlestickRoutes()
-  val spreadRoutes = new SpreadRoutes()
   val tradeRoutes = new TradeRoutes()
+  val accountRoutes = new AccountRoutes()
+  val apiRoutes: Route = {
+    pathPrefix("api") {
+      concat(
+        candlestickRoutes.apiRoutes,
+        accountRoutes.apiRoutes
+      ) 
+    }
+  }
+  val webSocketRoutes: Route = {
+    pathPrefix("ws") {
+      concat(tradeRoutes.webSocketRoutes)
+    }
+  }
   val routes: Route = {
-    concat(
-      candlestickRoutes.routes,
-      spreadRoutes.routes,
-      tradeRoutes.routes
-    )
+    concat(apiRoutes, webSocketRoutes)
   }
   
   val binding = Http().newServerAt("localhost", BacktesterConfig.PORT).bind(routes)
