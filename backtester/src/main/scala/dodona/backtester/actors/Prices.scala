@@ -2,10 +2,14 @@ package dodona.backtester.actors
 
 import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.{AbstractBehavior, ActorContext, Behaviors}
+import akka.actor.typed.ActorRef
 
 object Prices {
   sealed trait Protocol
   final case class AdjustPrice(pair: String, price: BigDecimal) extends Protocol
+  final case class GetPrice(pair: String, replyTo: ActorRef[PriceValue]) extends Protocol
+
+  final case class PriceValue(value: BigDecimal)
 
   def apply(): Behavior[Protocol] =
     Behaviors.setup(ctx => {
@@ -21,7 +25,15 @@ class Prices(ctx: ActorContext[Prices.Protocol]) extends AbstractBehavior[Prices
     msg match {
       case AdjustPrice(pair, price) => 
         pricesMap += (pair -> price)
-        println(pricesMap)
         this
+      case GetPrice(pair, replyTo) => 
+        pricesMap.get(pair) match {
+          case Some(value) =>
+            replyTo ! PriceValue(value)
+            this
+          case None =>
+            replyTo ! PriceValue(0)
+            this
+        }
     }
 }

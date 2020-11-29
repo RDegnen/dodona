@@ -45,10 +45,14 @@ lazy val dodonaBacktester = (project in file("backtester"))
   .settings(
     name := "Dodona Backtester",
     libraryDependencies ++= Seq(
-      "com.typesafe.slick" %% "slick" % SlickVersion,
+      "org.scalatest" %% "scalatest" % ScalaTestVersion % "test",
+      "com.typesafe.akka" %% "akka-actor-testkit-typed" % AkkaVersion % "test",
       "org.slf4j" % "slf4j-nop" % "1.6.4",
-      "com.typesafe.slick" %% "slick-hikaricp" % SlickVersion,
       "org.xerial" % "sqlite-jdbc" % "3.32.3.2"
     ),
+    libraryDependencies ++= Seq(
+      "com.typesafe.slick" %% "slick",
+      "com.typesafe.slick" %% "slick-hikaricp",
+    ).map(_ % SlickVersion),
     scalacOptions += "-Ywarn-unused:imports"
   )

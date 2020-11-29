@@ -11,12 +11,15 @@ object MainSystem {
   final case class PricesActor(actor: ActorRef[Prices.Protocol]) extends Reply
 
   def apply(): Behavior[Protocol] =
-    Behaviors.receive((ctx, msg) => {
-      msg match {
-        case GetPricesActor(replyTo) =>
-          val prices = ctx.spawn(Prices(), "prices")
-          replyTo ! PricesActor(prices)
-          Behaviors.same
-      }
+    Behaviors.setup(ctx => {
+      val prices = ctx.spawn(Prices(), "prices")
+      
+      Behaviors.receiveMessage(msg => {
+        msg match {
+          case GetPricesActor(replyTo) =>
+            replyTo ! PricesActor(prices)
+            Behaviors.same
+        }
+      })
     })
 }
