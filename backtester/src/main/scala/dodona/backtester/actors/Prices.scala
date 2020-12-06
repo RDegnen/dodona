@@ -1,8 +1,7 @@
 package dodona.backtester.actors
 
-import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.{AbstractBehavior, ActorContext, Behaviors}
-import akka.actor.typed.ActorRef
+import akka.actor.typed.{ActorRef, Behavior}
 
 object Prices {
   sealed trait Protocol

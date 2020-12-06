@@ -11,13 +11,13 @@ import akka.stream.scaladsl.{Broadcast, Flow, GraphDSL, Sink, Source}
 import akka.util.Timeout
 import dodona.backtester.actors.{MainSystem, Prices}
 import dodona.backtester.lib.db.DB
-import dodona.backtester.lib.db.schema.Trades
+import dodona.backtester.lib.db.schema.TradesDAO
 import dodona.backtester.lib.domain.Trade
 import io.circe.syntax._
 import org.reactivestreams.Publisher
 import slick.basic.DatabasePublisher
-import slick.driver.SQLiteDriver.api._
-import slick.lifted.TableQuery
+import slick.jdbc.JdbcBackend.Database
+import slick.jdbc.SQLiteProfile
 
 object TradeModel {
   import akka.actor.typed.scaladsl.AskPattern._
@@ -35,15 +35,17 @@ object TradeModel {
 }
 
 class TradeModel(pricesRef: ActorRef[Prices.Protocol]) {
-  private val db = DB.db
+  val dao = new TradesDAO(SQLiteProfile)
+  val db = new DB(Database.forConfig("DodonaBacktester.db"))
+  import dao.profile.api._
+
   private type tupleType =
     (Int, BigDecimal, BigDecimal, BigDecimal, Long, String)
 
   def streamTradesBySymbol(
       symbol: String
   )(implicit ec: ExecutionContext): Flow[Message, Message, NotUsed] = {
-    val trades = TableQuery[Trades]
-    val query = trades.filter(_.symbol === symbol).result
+    val query = dao.trades.filter(_.symbol === symbol).result
     val p: DatabasePublisher[tupleType] =
       db.stream(query.transactionally.withStatementParameters(fetchSize = 5000))
 
@@ -53,9 +55,8 @@ class TradeModel(pricesRef: ActorRef[Prices.Protocol]) {
   def streamTradesBySymbolAndTime(symbol: String, timeToBegin: Long)(
     implicit ec: ExecutionContext
   ): Flow[Message, Message, NotUsed] = {
-    val trades = TableQuery[Trades]
     val query =
-      trades.filter(_.symbol === symbol).filter(_.time > timeToBegin).result
+      dao.trades.filter(_.symbol === symbol).filter(_.time > timeToBegin).result
     val p: DatabasePublisher[tupleType] =
       db.stream(query.transactionally.withStatementParameters(fetchSize = 5000))
 
