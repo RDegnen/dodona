@@ -7,14 +7,12 @@ import akka.actor.typed.scaladsl.AskPattern._
 import akka.actor.typed.{ActorRef, ActorSystem, Scheduler}
 import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
 import akka.util.Timeout
-import dodona.backtester.actors.{MainSystem, Prices}
+import dodona.backtester.actors.{MainSystem, Prices, Wallet}
 import dodona.backtester.lib.Pairs
-import dodona.backtester.lib.config.AccountConfig
+import dodona.backtester.lib.config.{AccountConfig, DatabaseConfig}
 import dodona.backtester.lib.db.DB
 import dodona.backtester.lib.db.schema.OrdersDAO
 import dodona.backtester.lib.domain.Order
-import dodona.backtester.services.account.WalletService
-import slick.jdbc.JdbcBackend.Database
 import slick.jdbc.SQLiteProfile
 
 object OrderModel {
@@ -29,20 +27,29 @@ object OrderModel {
       )
       .asInstanceOf[MainSystem.PricesActor]
 
-    new OrderModel(prices.actor)
+    val wallet = Await
+      .result(
+        system.ask(MainSystem.GetWalletActor(_)),
+        10.seconds
+      )
+      .asInstanceOf[MainSystem.WalletActor]
+
+    new OrderModel(prices.actor, wallet.actor)
   }
 }
 
-class OrderModel(pricesRef: ActorRef[Prices.Protocol])(implicit
+class OrderModel(
+    pricesRef: ActorRef[Prices.Protocol],
+    walletRef: ActorRef[Wallet.Protocol]
+)(implicit
     scheduler: Scheduler,
     ec: ExecutionContext
 ) {
   private val tradingFee = AccountConfig.TRADING_FEE
-  private val wallet = WalletService
   private val buy = "BUY"
   private val sell = "SELL"
   val dao = new OrdersDAO(SQLiteProfile)
-  val db = new DB(Database.forConfig("DodonaBacktester.db"))
+  val db = new DB(DatabaseConfig.sqlite)
 
   def placeOrder(
       symbol: String,
@@ -64,29 +71,43 @@ class OrderModel(pricesRef: ActorRef[Prices.Protocol])(implicit
   )(implicit
       timeout: Timeout
   ): Future[HttpResponse] = {
-    pricesRef
-      .ask(ref => Prices.GetPrice(symbol, ref))
-      .map(priceValue => {
-        val walletAmount = wallet.getBalance(pair._2)
-        val marketPrice = priceValue.value
-        val orderTotalValue = calculateOrderValue(
+    val marketValue = getMarketValue(symbol)
+    val orderTotalValue = marketValue
+      .map(marketPrice => {
+        calculateOrderValue(
           marketPrice,
           quantity,
           (a: BigDecimal, b: BigDecimal) => a + b
         )
-        if (walletAmount >= orderTotalValue) {
-          val time = System.currentTimeMillis()
-          executeOrder(symbol, buy, quantity, marketPrice, time)
-          wallet.updateBalance(pair._1, quantity)
-          wallet.updateBalance(pair._2, walletAmount - orderTotalValue)
-          HttpResponse(StatusCodes.OK)
-        } else {
-          HttpResponse(
-            StatusCodes.BadRequest,
-            entity = s"Not enough ${pair._2} in your wallet"
-          )
-        }
       })
+
+    val buyOrError = (
+        marketPrice: BigDecimal,
+        orderTotalValue: BigDecimal,
+        balanceValue: BigDecimal
+    ) => {
+      if (balanceValue >= orderTotalValue) {
+        val time = System.currentTimeMillis()
+        executeOrder(symbol, buy, quantity, marketPrice, time)
+        walletRef ! Wallet.UpdateBalance(pair._1, quantity)
+        walletRef ! Wallet.UpdateBalance(
+          pair._2,
+          balanceValue - orderTotalValue
+        )
+        HttpResponse(StatusCodes.OK)
+      } else {
+        HttpResponse(
+          StatusCodes.BadRequest,
+          entity = s"Not enough ${pair._2} in your wallet"
+        )
+      }
+    }
+
+    for {
+      mk <- marketValue
+      otv <- orderTotalValue
+      b <- getBalance(pair._2)
+    } yield buyOrError(mk, otv, b)
   }
 
   private def placeSell(
@@ -96,30 +117,55 @@ class OrderModel(pricesRef: ActorRef[Prices.Protocol])(implicit
   )(implicit
       timeout: Timeout
   ): Future[HttpResponse] = {
-    pricesRef
-      .ask(ref => Prices.GetPrice(symbol, ref))
-      .map(priceValue => {
-        val walletAmount = wallet.getBalance(pair._1)
-        val marketPrice = priceValue.value
-        val valueOfSell = calculateOrderValue(
+    val marketValue = getMarketValue(symbol)
+    val valueOfSell = marketValue
+      .map(marketPrice => {
+        calculateOrderValue(
           marketPrice,
           quantity,
           (a: BigDecimal, b: BigDecimal) => a - b
         )
-        if (walletAmount >= quantity) {
-          val time = System.currentTimeMillis()
-          executeOrder(symbol, sell, quantity, marketPrice, time)
-          wallet.updateBalance(pair._2, valueOfSell)
-          wallet.updateBalance(pair._1, walletAmount - quantity)
-          HttpResponse(StatusCodes.OK)
-        } else {
-          HttpResponse(
-            StatusCodes.BadRequest,
-            entity = s"Not enough ${pair._1} in your wallet"
-          )
-        }
       })
+
+    val sellOrError = (
+        marketPrice: BigDecimal,
+        valueOfSell: BigDecimal,
+        balanceValue: BigDecimal
+    ) => {
+      if (balanceValue >= quantity) {
+        val time = System.currentTimeMillis()
+        executeOrder(symbol, sell, quantity, marketPrice, time)
+        walletRef ! Wallet.UpdateBalance(pair._2, valueOfSell)
+        walletRef ! Wallet.UpdateBalance(pair._1, balanceValue - quantity)
+        HttpResponse(StatusCodes.OK)
+      } else {
+        HttpResponse(
+          StatusCodes.BadRequest,
+          entity = s"Not enough ${pair._1} in your wallet"
+        )
+      }
+    }
+
+    for {
+      mk <- marketValue
+      vos <- valueOfSell
+      b <- getBalance(pair._1)
+    } yield sellOrError(mk, vos, b)
   }
+
+  private def getMarketValue(
+      symbol: String
+  )(implicit timeout: Timeout): Future[BigDecimal] =
+    pricesRef
+      .ask(ref => Prices.GetPrice(symbol, ref))
+      .map(_.value)
+
+  private def getBalance(
+      symbol: String
+  )(implicit timeout: Timeout): Future[BigDecimal] =
+    walletRef
+      .ask(ref => Wallet.GetBalance(symbol, ref))
+      .map(_.value)
 
   private def calculateOrderValue(
       marketPrice: BigDecimal,

@@ -10,13 +10,13 @@ import akka.stream.FlowShape
 import akka.stream.scaladsl.{Broadcast, Flow, GraphDSL, Sink, Source}
 import akka.util.Timeout
 import dodona.backtester.actors.{MainSystem, Prices}
+import dodona.backtester.lib.config.DatabaseConfig
 import dodona.backtester.lib.db.DB
 import dodona.backtester.lib.db.schema.TradesDAO
 import dodona.backtester.lib.domain.Trade
 import io.circe.syntax._
 import org.reactivestreams.Publisher
 import slick.basic.DatabasePublisher
-import slick.jdbc.JdbcBackend.Database
 import slick.jdbc.SQLiteProfile
 
 object TradeModel {
@@ -36,7 +36,7 @@ object TradeModel {
 
 class TradeModel(pricesRef: ActorRef[Prices.Protocol]) {
   val dao = new TradesDAO(SQLiteProfile)
-  val db = new DB(Database.forConfig("DodonaBacktester.db"))
+  val db = new DB(DatabaseConfig.sqlite)
   import dao.profile.api._
 
   private type tupleType =

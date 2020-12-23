@@ -22,7 +22,7 @@ object Backtester extends App {
 
   val candlestickRoutes = new CandlestickRoutes()
   val tradeRoutes = new TradeRoutes()
-  val accountRoutes = new AccountRoutes()
+  val accountRoutes = AccountRoutes()
   val apiRoutes: Route = {
     pathPrefix("api") {
       concat(

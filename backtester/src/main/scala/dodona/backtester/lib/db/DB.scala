@@ -12,4 +12,7 @@ class DB(database: Database) {
 
   def stream[T](a: DBIOAction[_, Streaming[T], Nothing]): DatabasePublisher[T] =
     database.stream(a)
+
+  def close: Unit =
+    database.close()
 }
