@@ -10,7 +10,7 @@ inThisBuild(
   )
 )
 
-val AkkaVersion = "2.6.9"
+val AkkaVersion = "2.6.10"
 val AkkaHttpVersion = "10.2.0"
 val CirceVersion = "0.12.3"
 val ScalaTestVersion = "3.2.0"
@@ -21,12 +21,16 @@ lazy val dodona = (project in file("."))
     name := "Dodona",
     libraryDependencies ++= Seq(
       "org.scalatest" %% "scalatest" % ScalaTestVersion % "test",
-      "com.typesafe.akka" %% "akka-stream" % AkkaVersion,
       "com.typesafe.akka" %% "akka-http" % AkkaHttpVersion,
       "com.typesafe" % "config" % "1.4.0",
       "commons-codec" % "commons-codec" % "1.15",
       "org.ta4j" % "ta4j-core" % "0.13"
     ),
+    libraryDependencies ++= Seq(
+      "com.typesafe.akka" %% "akka-stream",
+      "com.typesafe.akka" %% "akka-stream-typed",
+      "com.typesafe.akka" %% "akka-actor-typed"
+    ).map(_ % AkkaVersion),
     libraryDependencies ++= Seq(
       "io.circe" %% "circe-core",
       "io.circe" %% "circe-generic",
@@ -41,10 +45,14 @@ lazy val dodonaBacktester = (project in file("backtester"))
   .settings(
     name := "Dodona Backtester",
     libraryDependencies ++= Seq(
-      "com.typesafe.slick" %% "slick" % SlickVersion,
+      "org.scalatest" %% "scalatest" % ScalaTestVersion % "test",
+      "com.typesafe.akka" %% "akka-actor-testkit-typed" % AkkaVersion % "test",
       "org.slf4j" % "slf4j-nop" % "1.6.4",
-      "com.typesafe.slick" %% "slick-hikaricp" % SlickVersion,
       "org.xerial" % "sqlite-jdbc" % "3.32.3.2"
     ),
+    libraryDependencies ++= Seq(
+      "com.typesafe.slick" %% "slick",
+      "com.typesafe.slick" %% "slick-hikaricp",
+    ).map(_ % SlickVersion),
     scalacOptions += "-Ywarn-unused:imports"
   )

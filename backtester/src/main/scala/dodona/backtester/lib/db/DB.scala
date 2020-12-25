@@ -1,7 +1,18 @@
 package dodona.backtester.lib.db
 
-import slick.driver.SQLiteDriver.api._
+import scala.concurrent.Future
 
-object DB {
-  final val db = Database.forConfig("DodonaBacktester.db")
+import slick.basic.DatabasePublisher
+import slick.dbio.{DBIOAction, NoStream, Streaming}
+import slick.jdbc.JdbcBackend.Database
+
+class DB(database: Database) {
+  def run[R](a: DBIOAction[R,NoStream,Nothing]): Future[R] =
+    database.run(a)
+
+  def stream[T](a: DBIOAction[_, Streaming[T], Nothing]): DatabasePublisher[T] =
+    database.stream(a)
+
+  def close: Unit =
+    database.close()
 }
