@@ -84,15 +84,15 @@ class OrderModel(
     val buyOrError = (
         marketPrice: BigDecimal,
         orderTotalValue: BigDecimal,
-        balanceValue: BigDecimal
+        fiatBalance: BigDecimal
     ) => {
-      if (balanceValue >= orderTotalValue) {
+      if (fiatBalance >= orderTotalValue) {
         val time = System.currentTimeMillis()
         executeOrder(symbol, buy, quantity, marketPrice, time)
         walletRef ! Wallet.UpdateBalance(pair._1, quantity)
         walletRef ! Wallet.UpdateBalance(
           pair._2,
-          balanceValue - orderTotalValue
+          fiatBalance - orderTotalValue
         )
         HttpResponse(StatusCodes.OK)
       } else {
@@ -130,13 +130,14 @@ class OrderModel(
     val sellOrError = (
         marketPrice: BigDecimal,
         valueOfSell: BigDecimal,
-        balanceValue: BigDecimal
+        coinBalance: BigDecimal,
+        fiatBalance: BigDecimal
     ) => {
-      if (balanceValue >= quantity) {
+      if (coinBalance >= quantity) {
         val time = System.currentTimeMillis()
         executeOrder(symbol, sell, quantity, marketPrice, time)
-        walletRef ! Wallet.UpdateBalance(pair._2, valueOfSell)
-        walletRef ! Wallet.UpdateBalance(pair._1, balanceValue - quantity)
+        walletRef ! Wallet.UpdateBalance(pair._2, fiatBalance + valueOfSell)
+        walletRef ! Wallet.UpdateBalance(pair._1, coinBalance - quantity)
         HttpResponse(StatusCodes.OK)
       } else {
         HttpResponse(
@@ -149,8 +150,9 @@ class OrderModel(
     for {
       mk <- marketValue
       vos <- valueOfSell
-      b <- getBalance(pair._1)
-    } yield sellOrError(mk, vos, b)
+      b1 <- getBalance(pair._1)
+      b2 <- getBalance(pair._2)
+    } yield sellOrError(mk, vos, b1, b2)
   }
 
   private def getMarketValue(

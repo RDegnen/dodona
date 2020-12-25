@@ -29,7 +29,7 @@ class Wallet(ctx: ActorContext[Wallet.Protocol]) extends AbstractBehavior[Wallet
       case UpdateBalance(symbol, balance) =>
         balances += (symbol -> balance)
         this
-      case GetBalance(symbol, replyTo) => 
+      case GetBalance(symbol, replyTo) =>
         balances.get(symbol) match {
           case Some(value) => 
             replyTo ! BalanceValue(value)

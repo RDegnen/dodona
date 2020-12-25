@@ -2,11 +2,6 @@ package dodona.backtester.models.account
 
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.BeforeAndAfterAll
-import akka.actor.typed.ActorSystem
-import dodona.backtester.actors.MainSystem
-import scala.concurrent.Await
-import akka.util.Timeout
-import scala.concurrent.duration._
 import akka.actor.typed.scaladsl.AskPattern._
 import dodona.backtester.actors.Prices
 import dodona.backtester.lib.db.schema.OrdersDAO
@@ -17,64 +12,74 @@ import scala.util.Success
 import akka.http.scaladsl.model.HttpResponse
 import akka.http.scaladsl.model.StatusCodes
 import scala.util.Failure
+import akka.actor.testkit.typed.scaladsl.ActorTestKit
+import dodona.backtester.actors.Wallet
+import org.scalatest.concurrent.Waiters.Waiter
+import org.scalatest.concurrent.PatienceConfiguration
+import org.scalatest.time.Span
+import org.scalatest.concurrent.Waiters.Dismissals
+import org.scalatest.time.Seconds
+import org.scalatest.BeforeAndAfterEach
 
-class OrderModelTest extends AnyFunSpec with BeforeAndAfterAll {
-  // FIXME maybe use the testing actors
-  implicit val timeout: Timeout = 10.seconds
-  implicit val system = ActorSystem(MainSystem(), "test")
-  implicit val ec = system.executionContext
+class OrderModelTest extends AnyFunSpec with BeforeAndAfterAll with BeforeAndAfterEach {
+  val testKit = ActorTestKit()
+  implicit val scheduler = testKit.scheduler
+  implicit val ec = testKit.system.executionContext
 
   val symbol = "ETHUSD"
-  val prices = Await
-    .result(
-        system.ask(MainSystem.GetPricesActor(_)),
-        10.seconds
-      )
-    .asInstanceOf[MainSystem.PricesActor]
-  val wallet = Await
-    .result(
-      system.ask(MainSystem.GetWalletActor(_)),
-      10.seconds
-    )
-    .asInstanceOf[MainSystem.WalletActor]
+  val w = new Waiter
+  val patienceConfigTimeout = PatienceConfiguration.Timeout(Span(2, Seconds))
+  val patienceConfigDismissals = Dismissals(1)
+  val pricesRef = testKit.spawn(Prices(), "prices")
+  val walletRef = testKit.spawn(Wallet(), "wallet")
+  val walletProbe = testKit.createTestProbe[Wallet.BalanceValue]()
   val ordersDao = new OrdersDAO(H2Profile)
   val database = new DB(DatabaseConfig.h2)
-  val testOrderModel = new OrderModel(prices.actor, wallet.actor) {
+  val testOrderModel = new OrderModel(pricesRef, walletRef) {
     override val dao: OrdersDAO = ordersDao
     override val db: DB = database
   }
-
+  
   override protected def beforeAll(): Unit = {
     ordersDao.create
-    prices.actor ! Prices.AdjustPrice(symbol, 100)
+    pricesRef ! Prices.AdjustPrice(symbol, 100)
   }
 
   override protected def afterAll(): Unit = {
-    system.terminate()
+    testKit.stop(pricesRef)
+    testKit.stop(walletRef)
+    testKit.shutdownTestKit()
     database.close
+  }
+
+  override protected def afterEach(): Unit = {
+    w.await(patienceConfigTimeout, patienceConfigDismissals)
   }
 
   describe("OrderModel") {
     it("should place a buy order") {
-      testOrderModel.placeOrder(symbol, 2, "BUY").onComplete {
-        case Success(value) => {
-          assert(value == HttpResponse(StatusCodes.OK))
-        }
-        case Failure(exception) => 
+      val quantity = 2
+      val order = testOrderModel.placeOrder(symbol, quantity, "BUY")
+      order.onComplete {
+        case Success(value) => 
+          walletRef ! Wallet.GetBalance("ETH", walletProbe.ref)
+          walletProbe.expectMessage(Wallet.BalanceValue(quantity))
+          assert(value === HttpResponse(StatusCodes.OK))
+          w.dismiss()
+        case Failure(exception) => println(exception)
       }
     }
 
     it("should place a sell order") {
-      // FIXME fix this test
-      prices.actor ! Prices.AdjustPrice(symbol, 200)
+      pricesRef ! Prices.AdjustPrice(symbol, 200)
 
-      testOrderModel.placeOrder(symbol, 2, "SELL").onComplete {
-        case Success(value) => {
-          assert(value == HttpResponse(
-            StatusCodes.BadRequest,
-            entity = "Not enough ETH in your wallet"
-          ))
-        }
+      val order = testOrderModel.placeOrder(symbol, 2, "SELL")
+      order.onComplete {
+        case Success(value) => 
+          walletRef ! Wallet.GetBalance("USD", walletProbe.ref)
+          walletProbe.expectMessage(Wallet.BalanceValue(1199.400))
+          assert(value === HttpResponse(StatusCodes.OK))
+          w.dismiss()
         case Failure(exception) => println(exception)
       }
     }
