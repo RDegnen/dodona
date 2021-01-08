@@ -1,4 +1,5 @@
 .vars
+http-old/
 
 *.class
 *.log

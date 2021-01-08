@@ -12,7 +12,7 @@ class CandlestickRoutes(implicit ec: ExecutionContext) {
   private val model = new CandlestickModel()
 
   lazy val apiRoutes: Route = {
-    pathPrefix("candlesticks") {
+    pathPrefix("market") {
       concat(
         path("OHLC") {
           parameters("symbol") { symbol =>
