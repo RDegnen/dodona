@@ -5,7 +5,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.Uri.Query
 import akka.http.scaladsl.model.{HttpHeader, HttpMethod, RequestEntity}
-import dodona.lib.http.{BaseHttpClient, CandlestickParams, HttpAuthLevel, HttpEndpoint, HttpEndpoints, QueryParameters}
+import dodona.lib.http.{BaseHttpClient, CANDLESTICKS, CandlestickParams, DefaultParams, HttpAuthLevel, HttpEndpoint, QueryParameters, WEBSOCKET_TOKEN}
 import io.circe.Decoder
 
 class BacktesterHttpClient extends BaseHttpClient {
@@ -20,21 +20,27 @@ class BacktesterHttpClient extends BaseHttpClient {
       headers: Seq[HttpHeader],
       entity: RequestEntity
   )(implicit system: ActorSystem, ec: ExecutionContext): Future[T] = {
-    endpoint match {
-      case HttpEndpoints.CANDLESTICKS => {
-        val url = s"$baseUrl$candlesticksEndpoint"
-        params match {
-          case CandlestickParams(pair, interval) =>
-            executeRequest[T](
-              method,
-              url,
-              Query(Map("symbol" -> pair, "interval" -> interval)),
-              headers,
-              entity
-            )
-        }
-      }
-      case HttpEndpoint(_) => ???
-    }
+    val paramsMap = convertParamsToMap(params)
+    val url = generateUrl(endpoint)
+    executeRequest[T](
+      method,
+      url,
+      Query(paramsMap),
+      headers,
+      entity
+    )
   }
+
+  private def convertParamsToMap(params: QueryParameters): Map[String, String] =
+    params match {
+      case DefaultParams() => Map()
+      case CandlestickParams(pair, interval) =>
+        Map("symbol" -> pair, "interval" -> interval)
+    }
+
+  private def generateUrl(endpoint: HttpEndpoint): String =
+    endpoint match {
+      case CANDLESTICKS    => s"$baseUrl$candlesticksEndpoint"
+      case WEBSOCKET_TOKEN => ???
+    }
 }

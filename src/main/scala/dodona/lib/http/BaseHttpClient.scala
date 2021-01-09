@@ -22,6 +22,8 @@ trait BaseHttpClient {
     entity: RequestEntity = HttpEntity.Empty,
   )(implicit system: ActorSystem, ec: ExecutionContext): Future[T] // FIXME Change this to typed system when necessary
 
+  protected def nonceGenerator: () => Long = () => System.currentTimeMillis()
+  
   protected def executeRequest[T: Decoder](
       method: HttpMethod,
       url: String,
@@ -32,7 +34,7 @@ trait BaseHttpClient {
     val response = Http().singleRequest(
       HttpRequest(
         method,
-        Uri(baseUrl ++: url).withQuery(query),
+        Uri(url).withQuery(query),
         headers,
         entity
       )
