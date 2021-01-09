@@ -11,7 +11,6 @@ import akka.http.scaladsl.model.HttpMethods
 import akka.http.scaladsl.model.ws.Message
 import akka.stream.OverflowStrategy
 import akka.stream.scaladsl.{Keep, Sink, Source}
-import dodona.constants.DodonaConstants.BACKTESTER_WS_URL
 import dodona.lib.domain.dodona.market.{Candlestick, Trade}
 import dodona.lib.http.{BaseHttpClient, CANDLESTICKS, CandlestickParams, PUBLIC}
 import dodona.lib.websocket.IWebSocketClient
@@ -21,6 +20,7 @@ import org.ta4j.core.indicators.EMAIndicator
 import org.ta4j.core.indicators.helpers.ClosePriceIndicator
 import org.ta4j.core.trading.rules.{CrossedDownIndicatorRule, CrossedUpIndicatorRule}
 import org.ta4j.core.{BaseBarSeries, BaseBarSeriesBuilder, BaseStrategy}
+import dodona.Constants.BACKTESTER_WS_URL
 
 class MeanReversion(
     val httpClient: BaseHttpClient,
