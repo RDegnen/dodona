@@ -1,7 +1,7 @@
 package dodona.backtester.lib.domain
 
 import io.circe.Encoder
-import io.circe.generic.semiauto._
+import io.circe.syntax._
 
 case class Candlestick(
     openTime: Long,
@@ -14,5 +14,7 @@ case class Candlestick(
 )
 
 object Candlestick {
-  lazy implicit val encodeCandlestick: Encoder[Candlestick] = deriveEncoder
+  lazy implicit val encodeCandlestick: Encoder[Candlestick] = Encoder.instance {
+    case candlestick @ Candlestick(ot,o,h,l,c,v,ct) => (ot,o,h,l,c,v,ct).asJson
+  }
 }

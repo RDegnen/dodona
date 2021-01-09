@@ -2,8 +2,7 @@ package dodona
 
 import akka.actor.ActorSystem
 import com.typesafe.config.ConfigFactory
-import dodona.constants.{DodonaConstants, Exchanges}
-import dodona.lib.http.HttpClient
+import dodona.lib.http.clients.BacktesterHttpClient
 import dodona.lib.websocket.WebSocketClient
 import dodona.strategies.meanreversion.MeanReversion
 
@@ -20,14 +19,11 @@ object Dodona extends App {
   implicit val system = ActorSystem()
   implicit val ec = system.dispatcher
 
-  val binanceHttpClient = new HttpClient(
-    Exchanges.BACKTESTER, 
-    DodonaConstants.BACKTESTER_BASE_URL
-  )
-  val binanceWebsocketClient = new WebSocketClient()
+  val httpClient = new BacktesterHttpClient()
+  val websocketClient = new WebSocketClient()
   val strategy = new MeanReversion(
-    binanceHttpClient,
-    binanceWebsocketClient,
+    httpClient,
+    websocketClient,
     "ETHUSD",
     15
   )

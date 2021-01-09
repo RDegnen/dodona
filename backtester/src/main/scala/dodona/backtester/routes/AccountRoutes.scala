@@ -11,6 +11,7 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.util.Timeout
 import io.circe.syntax._
+import _root_.dodona.backtester.models.account.OrderModel
 
 object AccountRoutes {
   def apply()(implicit
@@ -25,12 +26,13 @@ object AccountRoutes {
         10.seconds
       )
       .asInstanceOf[MainSystem.WalletActor]
+    val orderModel = OrderModel()
 
-    new AccountRoutes(wallet.actor)
+    new AccountRoutes(wallet.actor, orderModel)
   }
 }
 
-class AccountRoutes(walletRef: ActorRef[Wallet.Protocol])(implicit
+class AccountRoutes(walletRef: ActorRef[Wallet.Protocol], orderModel: OrderModel)(implicit
     ec: ExecutionContext,
     scheduler: Scheduler,
     timeout: Timeout
@@ -43,6 +45,16 @@ class AccountRoutes(walletRef: ActorRef[Wallet.Protocol])(implicit
             onComplete(walletRef.ask(ref => Wallet.GetBalance(symbol, ref))) {
               case Failure(exception) => complete(exception)
               case Success(bl)        => complete(bl.value.asJson.toString())
+            }
+          }
+        }
+      }
+      path("order") {
+        get {
+          parameters("symbol", "quantity", "side") { (symbol, quantity, side) =>
+            onComplete(orderModel.placeOrder(symbol, quantity.toDouble, side)) {
+              case Failure(exception) => complete(exception)
+              case Success(value) => complete(value)
             }
           }
         }
