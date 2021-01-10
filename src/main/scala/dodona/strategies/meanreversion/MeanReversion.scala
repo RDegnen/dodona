@@ -6,28 +6,28 @@ import java.{util => ju}
 import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Success}
 
-import akka.actor.ActorSystem
-import akka.http.scaladsl.model.HttpMethods
+import akka.actor.typed.ActorSystem
 import akka.http.scaladsl.model.ws.Message
 import akka.stream.OverflowStrategy
 import akka.stream.scaladsl.{Keep, Sink, Source}
+import dodona.Constants.BACKTESTER_WS_URL
 import dodona.lib.domain.dodona.market.{Candlestick, Trade}
-import dodona.lib.http.{BaseHttpClient, CANDLESTICKS, CandlestickParams, PUBLIC}
+import dodona.lib.http.BaseHttpClient
 import dodona.lib.websocket.IWebSocketClient
 import dodona.strategies.CandlestickBuilder
 import io.circe.parser.decode
 import org.ta4j.core.indicators.EMAIndicator
 import org.ta4j.core.indicators.helpers.ClosePriceIndicator
 import org.ta4j.core.trading.rules.{CrossedDownIndicatorRule, CrossedUpIndicatorRule}
-import org.ta4j.core.{BaseBarSeries, BaseBarSeriesBuilder, BaseStrategy}
-import dodona.Constants.BACKTESTER_WS_URL
+import org.ta4j.core.{BaseBarSeries, BaseStrategy}
+import dodona.MainSystem
 
 class MeanReversion(
     val httpClient: BaseHttpClient,
     val websocketClient: IWebSocketClient,
     val pair: String,
     val interval: Int
-)(implicit val system: ActorSystem, ec: ExecutionContext) {
+)(implicit val system: ActorSystem[MainSystem.Protocol], ec: ExecutionContext) {
   private var series: BaseBarSeries = _
   private var strategy: BaseStrategy = _
   private val candlestickBuilder = new CandlestickBuilder(interval)
@@ -36,25 +36,25 @@ class MeanReversion(
   private var exited = true
 
   def run(): Unit = {
-    val candlesticks = httpClient.generateRequest[List[Candlestick]](
-      PUBLIC,
-      HttpMethods.GET,
-      CANDLESTICKS,
-      CandlestickParams(pair, s"${interval}m")
-    )
+    // val candlesticks = httpClient.generateRequest[List[Candlestick]](
+    //   PUBLIC,
+    //   HttpMethods.GET,
+    //   CANDLESTICKS,
+    //   CandlestickParams(pair, s"${interval}m")
+    // )
 
-    candlesticks.onComplete {
-      case Success(candles) => {
-        series =
-          new BaseBarSeriesBuilder().withMaxBarCount(500).withName(pair).build()
-        candles.foreach(addBarToSeries)
-        setUpStrategy()
-        openSocketConnection()
-        println(series.getBarData().size())
-      }
-      case Failure(exception) =>
-        println(exception)
-    }
+    // candlesticks.onComplete {
+    //   case Success(candles) => {
+    //     series =
+    //       new BaseBarSeriesBuilder().withMaxBarCount(500).withName(pair).build()
+    //     candles.foreach(addBarToSeries)
+    //     setUpStrategy()
+    //     openSocketConnection()
+    //     println(series.getBarData().size())
+    //   }
+    //   case Failure(exception) =>
+    //     println(exception)
+    // }
   }
 
   private def setUpStrategy(): Unit = {

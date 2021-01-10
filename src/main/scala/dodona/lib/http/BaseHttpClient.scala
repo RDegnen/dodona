@@ -2,13 +2,14 @@ package dodona.lib.http
 
 import scala.concurrent.{ExecutionContext, Future, Promise}
 
-import akka.actor.ActorSystem
+import akka.actor.typed.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.Uri.Query
 import akka.http.scaladsl.model.{HttpEntity, HttpHeader, HttpMethod, HttpRequest, RequestEntity, Uri}
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import io.circe.Decoder
 import io.circe.parser.decode
+import dodona.MainSystem
 
 trait BaseHttpClient {
   protected val baseUrl: String
@@ -16,11 +17,11 @@ trait BaseHttpClient {
   def generateRequest[T: Decoder](
     authLevel: HttpAuthLevel,
     method: HttpMethod,
-    endpoint: HttpEndpoint,
-    params: QueryParameters = DefaultParams(),
+    endpoint: String,
+    params: Map[String, String] = Map(),
     headers: Seq[HttpHeader] = Seq(),
     entity: RequestEntity = HttpEntity.Empty,
-  )(implicit system: ActorSystem, ec: ExecutionContext): Future[T] // FIXME Change this to typed system when necessary
+  )(implicit system: ActorSystem[MainSystem.Protocol], ec: ExecutionContext): Future[T]
 
   protected def nonceGenerator: () => Long = () => System.currentTimeMillis()
   
@@ -30,7 +31,7 @@ trait BaseHttpClient {
       query: Query = Query(),
       headers: Seq[HttpHeader] = Nil,
       entity: RequestEntity = HttpEntity.Empty
-  )(implicit system: ActorSystem, ec: ExecutionContext): Future[T] = {
+  )(implicit system: ActorSystem[MainSystem.Protocol], ec: ExecutionContext): Future[T] = {
     val response = Http().singleRequest(
       HttpRequest(
         method,
