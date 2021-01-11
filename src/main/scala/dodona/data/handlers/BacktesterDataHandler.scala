@@ -15,9 +15,10 @@ import dodona.lib.websocket.{IWebSocketClient, WebSocketClient}
 import io.circe.parser.decode
 import dodona.MainSystem
 import akka.actor.typed.ActorRef
-import dodona.EventHandler
+import dodona.events.EventHandler
+import dodona.events.EventQueue
 
-class BacktesterDataHandler(asset: String, interval: Int, eh: ActorRef[EventHandler.Protocol])(implicit
+class BacktesterDataHandler(asset: String, interval: Int, eq: ActorRef[EventQueue.Event])(implicit
     override val system: ActorSystem[MainSystem.Protocol],
     ec: ExecutionContext
 ) extends BaseDataHandler(asset, interval) {
@@ -48,11 +49,10 @@ class BacktesterDataHandler(asset: String, interval: Int, eh: ActorRef[EventHand
   private def onMessage(message: Message): Unit = {
     decode[Trade](message.asTextMessage.getStrictText) match {
       case Right(trade) => {
-        println(trade.price)
         candlestickBuilder.addTrade(trade) match {
           case Some(bar) => {
             addBarToSeries(bar)
-            eh ! EventHandler.MarketEvent
+            eq ! EventQueue.Event(EventHandler.MarketEvent)
           }
           case None      => series.addPrice(trade.price)
         }

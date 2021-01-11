@@ -3,22 +3,25 @@ package dodona
 import akka.actor.typed.ActorRef
 import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.Behaviors
+import dodona.events.EventQueue
+import dodona.events.EventHandler
+import dodona.strategies.meanreversion.MeanReversion
 
 object MainSystem {
   sealed trait Protocol
-  final case class GetEventHandler(replyTo: ActorRef[Reply]) extends Protocol
+  final case class InitEvents(replyTo: ActorRef[Reply], strategy: MeanReversion) extends Protocol
 
   sealed trait Reply
-  final case class EventHandlerReply(actor: ActorRef[EventHandler.Protocol]) extends Reply
+  final case class EventQueueReply(actor: ActorRef[EventQueue.Event]) extends Reply
 
   def apply(): Behavior[Protocol] =
     Behaviors.setup(ctx => {
-      val eventHandler = ctx.spawn(EventHandler(), "event-handler")
-
       Behaviors.receiveMessage(msg => {
         msg match {
-          case GetEventHandler(replyTo) => 
-            replyTo ! EventHandlerReply(eventHandler)
+          case InitEvents(replyTo, strategy) =>
+            val eh = ctx.spawn(EventHandler(strategy), "event-handler")
+            val eq = ctx.spawn(EventQueue(eh), "event-queue")
+            replyTo ! EventQueueReply(eq)
             Behaviors.same
         }
       })

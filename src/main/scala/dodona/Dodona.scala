@@ -8,6 +8,7 @@ import akka.util.Timeout
 import scala.concurrent.duration._
 import scala.util.Success
 import scala.util.Failure
+import dodona.strategies.meanreversion.MeanReversion
 
 object DodonaConfig {
   val conf = ConfigFactory.load()
@@ -23,11 +24,14 @@ object Dodona extends App {
   implicit val ec = system.executionContext
   implicit val timeout: Timeout = 10.seconds
 
-  system.ask(MainSystem.GetEventHandler).onComplete {
+  val strategy = new MeanReversion()
+  system.ask(ref => MainSystem.InitEvents(ref, strategy)).onComplete {
     case Success(value) => {
-      val reply = value.asInstanceOf[MainSystem.EventHandlerReply]
-      val dh = new BacktesterDataHandler("ETHUSD", 15, reply.actor)
+      val reply = value.asInstanceOf[MainSystem.EventQueueReply]
+      val eq = reply.actor
+      val dh = new BacktesterDataHandler("ETHUSD", 15, eq)
       dh.initialize
+      strategy.initialize(dh, eq)
     }
     case Failure(err) => {
       println(err)

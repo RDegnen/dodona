@@ -19,9 +19,9 @@ import dodona.MainSystem
 
 abstract class BaseDataHandler(asset: String, interval: Int)(implicit val system: ActorSystem[MainSystem.Protocol], ec: ExecutionContext) {
   protected val candlestickBuilder = new CandlestickBuilder(interval)
-  protected val series: BaseBarSeries = new BaseBarSeriesBuilder().withMaxBarCount(500).withName(asset).build()
   protected val httpClient: BaseHttpClient
   protected val webSocketClient: IWebSocketClient
+  val series: BaseBarSeries = new BaseBarSeriesBuilder().withMaxBarCount(500).withName(asset).build()
 
   def initialize(): Unit
   
