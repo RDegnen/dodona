@@ -7,16 +7,19 @@ import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.ActorRef
 
 object EventQueue {
-  final case class Event(value: EventHandler.Protocol)
+  final case class Push(value: EventHandler.Protocol)
 
-  def apply(eh: ActorRef[EventHandler.Protocol]): Behavior[Event] =
+  def apply(eh: ActorRef[EventHandler.Protocol]): Behavior[Push] =
     Behaviors.setup(ctx => {
       new EventQueue(ctx, eh)
     })
 }
 
-class EventQueue(ctx: ActorContext[EventQueue.Event], eh: ActorRef[EventHandler.Protocol]) extends AbstractBehavior[EventQueue.Event](ctx) {
-  override def onMessage(msg: EventQueue.Event): Behavior[EventQueue.Event] =
+class EventQueue(
+    ctx: ActorContext[EventQueue.Push],
+    eh: ActorRef[EventHandler.Protocol]
+) extends AbstractBehavior[EventQueue.Push](ctx) {
+  override def onMessage(msg: EventQueue.Push): Behavior[EventQueue.Push] =
     msg match {
       case _ =>
         eh ! msg.value

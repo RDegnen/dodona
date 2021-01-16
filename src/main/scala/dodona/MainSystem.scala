@@ -5,14 +5,14 @@ import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.Behaviors
 import dodona.events.EventQueue
 import dodona.events.EventHandler
-import dodona.strategies.meanreversion.MeanReversion
+import dodona.strategies.IStrategy
 
 object MainSystem {
   sealed trait Protocol
-  final case class InitEvents(replyTo: ActorRef[Reply], strategy: MeanReversion) extends Protocol
+  final case class InitEvents(replyTo: ActorRef[Reply], strategy: IStrategy) extends Protocol
 
   sealed trait Reply
-  final case class EventQueueReply(actor: ActorRef[EventQueue.Event]) extends Reply
+  final case class EventQueueReply(actor: ActorRef[EventQueue.Push]) extends Reply
 
   def apply(): Behavior[Protocol] =
     Behaviors.setup(ctx => {

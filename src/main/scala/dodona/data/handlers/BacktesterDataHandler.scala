@@ -18,10 +18,10 @@ import akka.actor.typed.ActorRef
 import dodona.events.EventHandler
 import dodona.events.EventQueue
 
-class BacktesterDataHandler(asset: String, interval: Int, eq: ActorRef[EventQueue.Event])(implicit
+class BacktesterDataHandler(pair: String, interval: Int, eq: ActorRef[EventQueue.Push])(implicit
     override val system: ActorSystem[MainSystem.Protocol],
     ec: ExecutionContext
-) extends BaseDataHandler(asset, interval) {
+) extends BaseDataHandler(pair, interval) {
   protected val httpClient: BaseHttpClient = new BacktesterHttpClient()
   protected val webSocketClient: IWebSocketClient = new WebSocketClient()
 
@@ -30,7 +30,7 @@ class BacktesterDataHandler(asset: String, interval: Int, eq: ActorRef[EventQueu
       case Success(candles) => {
         candles.foreach(addBarToSeries)
         openSocket[Trade](
-          s"$BACKTESTER_WS_URL/trade?symbol=${asset}&timeToBegin=1569222899999",
+          s"$BACKTESTER_WS_URL/trade?symbol=${pair}&timeToBegin=1569222899999",
           onMessage
         )
       }
@@ -43,7 +43,7 @@ class BacktesterDataHandler(asset: String, interval: Int, eq: ActorRef[EventQueu
       PUBLIC,
       HttpMethods.GET,
       "/market/OHLC",
-      Map("symbol" -> asset)
+      Map("symbol" -> pair)
     )
 
   private def onMessage(message: Message): Unit = {
@@ -52,7 +52,7 @@ class BacktesterDataHandler(asset: String, interval: Int, eq: ActorRef[EventQueu
         candlestickBuilder.addTrade(trade) match {
           case Some(bar) => {
             addBarToSeries(bar)
-            eq ! EventQueue.Event(EventHandler.MarketEvent)
+            eq ! EventQueue.Push(EventHandler.MarketEvent)
           }
           case None      => series.addPrice(trade.price)
         }

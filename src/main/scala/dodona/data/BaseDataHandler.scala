@@ -17,11 +17,11 @@ import io.circe.Encoder
 import org.ta4j.core.{BaseBarSeries, BaseBarSeriesBuilder}
 import dodona.MainSystem
 
-abstract class BaseDataHandler(asset: String, interval: Int)(implicit val system: ActorSystem[MainSystem.Protocol], ec: ExecutionContext) {
+abstract class BaseDataHandler(pair: String, interval: Int)(implicit val system: ActorSystem[MainSystem.Protocol], ec: ExecutionContext) {
   protected val candlestickBuilder = new CandlestickBuilder(interval)
   protected val httpClient: BaseHttpClient
   protected val webSocketClient: IWebSocketClient
-  val series: BaseBarSeries = new BaseBarSeriesBuilder().withMaxBarCount(500).withName(asset).build()
+  val series: BaseBarSeries = new BaseBarSeriesBuilder().withMaxBarCount(500).withName(pair).build()
 
   def initialize(): Unit
   
@@ -38,7 +38,7 @@ abstract class BaseDataHandler(asset: String, interval: Int)(implicit val system
   }
 
   protected def openSocket[TickType: Encoder](url: String, onMessage: Message => Unit): Unit = {
-    val assetLower = asset.toLowerCase
+    val pairLower = pair.toLowerCase
     val (ref, publisher) = Source
       .actorRef[TickType](
         bufferSize = 100,
