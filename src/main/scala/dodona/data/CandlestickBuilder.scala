@@ -1,4 +1,4 @@
-package dodona.strategies
+package dodona.data
 
 import java.time._
 import java.time.temporal.ChronoUnit

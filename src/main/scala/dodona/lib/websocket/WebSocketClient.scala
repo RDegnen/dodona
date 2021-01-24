@@ -2,7 +2,7 @@ package dodona.lib.websocket
 
 import scala.concurrent.{ExecutionContext, Future}
 
-import akka.actor.ActorSystem
+import akka.actor.typed.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.model.ws.{Message, TextMessage, WebSocketRequest}
@@ -10,6 +10,7 @@ import akka.stream.scaladsl.{Flow, Keep, Sink, Source}
 import akka.{Done, NotUsed}
 import io.circe.Encoder
 import io.circe.syntax._
+import dodona.MainSystem
 
 trait IWebSocketClient {
   def openSocket[WM: Encoder](
@@ -17,7 +18,7 @@ trait IWebSocketClient {
       source: Source[WM, NotUsed],
       sink: Sink[Message, Future[Done]]
   )(implicit
-      system: ActorSystem,
+      system: ActorSystem[MainSystem.Protocol],
       ec: ExecutionContext
   ): (Future[Done], Future[Done])
 }
@@ -28,7 +29,7 @@ class WebSocketClient extends IWebSocketClient {
       source: Source[WM, NotUsed],
       sink: Sink[Message, Future[Done]]
   )(implicit
-      system: ActorSystem,
+      system: ActorSystem[MainSystem.Protocol],
       ec: ExecutionContext
   ): (Future[Done], Future[Done]) = {
     val messageSource =

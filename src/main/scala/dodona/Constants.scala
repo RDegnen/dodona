@@ -9,4 +9,9 @@ object Constants {
   // Kraken
   final val KRAKEN_PUBLIC_WS_URL = "wss://ws.kraken.com"
   final val KRAKEN_PRIVATE_WS_URL = "wss://ws-auth.kraken.com"
+
+  object OrderSides {
+    final val BUY = "BUY"
+    final val SELL = "SELL"
+  }
 }

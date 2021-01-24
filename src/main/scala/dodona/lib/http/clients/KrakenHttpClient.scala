@@ -1,50 +1,42 @@
 package dodona.lib.http.clients
 
-import dodona.lib.http.BaseHttpClient
-import akka.actor.ActorSystem
-import akka.http.scaladsl.model.{HttpHeader, HttpMethod, RequestEntity}
-import dodona.lib.http.{HttpAuthLevel, HttpEndpoint, QueryParameters}
-import scala.concurrent.{ExecutionContext, Future}
-import io.circe.Decoder
-import dodona.lib.http.CANDLESTICKS
-import dodona.lib.http.WEBSOCKET_TOKEN
-import dodona.lib.http.DefaultParams
-import dodona.lib.http.CandlestickParams
-import dodona.lib.http.PUBLIC
-import akka.http.scaladsl.model.Uri.Query
-import dodona.lib.http.SIGNED
 import java.security.MessageDigest
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
-import org.apache.commons.codec.binary.Base64
-import dodona.DodonaConfig
+
+import scala.concurrent.{ExecutionContext, Future}
+
+import akka.actor.typed.ActorSystem
+import akka.http.scaladsl.model.Uri.Query
 import akka.http.scaladsl.model.headers.RawHeader
-import akka.http.scaladsl.model.FormData
+import akka.http.scaladsl.model.{FormData, HttpHeader, HttpMethod, RequestEntity}
+import dodona.DodonaConfig
+import dodona.lib.http.{BaseHttpClient, HttpAuthLevel, PUBLIC, SIGNED}
+import io.circe.Decoder
+import org.apache.commons.codec.binary.Base64
+import dodona.MainSystem
 
 class KrakenHttpClient extends BaseHttpClient {
   protected val baseUrl: String = "https://api.kraken.com"
-  private val candlesticksEndpoint = "/0/public/OHLC"
-  private val websocketTokenEndpoint = "/0/private/GetWebSocketsToken"
 
   def generateRequest[T: Decoder](
       authLevel: HttpAuthLevel,
       method: HttpMethod,
-      endpoint: HttpEndpoint,
-      params: QueryParameters,
+      endpoint: String,
+      params: Map[String, String],
       headers: Seq[HttpHeader],
       entity: RequestEntity
-  )(implicit system: ActorSystem, ec: ExecutionContext): Future[T] = {
-    val paramsMap = convertParamsToMap(params)
-    val url = generateUrl(endpoint)
+  )(implicit system: ActorSystem[MainSystem.Protocol], ec: ExecutionContext): Future[T] = {
+    val url = s"$baseUrl$endpoint"
     authLevel match {
       case PUBLIC => {
-        executeRequest[T](method, url, Query(paramsMap), headers, entity)
+        executeRequest[T](method, url, Query(params), headers, entity)
       }
       case SIGNED => {
         val nonce = nonceGenerator()
-        val parameters = paramsMap.concat(Map("nonce" -> nonce.toString()))
+        val parameters = params.concat(Map("nonce" -> nonce.toString()))
         val signature = generateSignature(
-          mapEndpointToString(endpoint),
+          endpoint,
           nonce,
           Query(parameters).toString(),
           DodonaConfig.KRAKEN_SECRET
@@ -56,20 +48,13 @@ class KrakenHttpClient extends BaseHttpClient {
         executeRequest[T](
           method,
           url,
-          Query(paramsMap),
+          Query(params),
           newHeaders,
           FormData(Map("nonce" -> nonce.toString)).toEntity
         )
       }
     }
   }
-
-  private def convertParamsToMap(params: QueryParameters): Map[String, String] =
-    params match {
-      case DefaultParams() => Map()
-      case CandlestickParams(pair, interval) =>
-        Map("pair" -> pair, "interval" -> interval)
-    }
 
   def generateSignature(
       path: String,
@@ -85,16 +70,4 @@ class KrakenHttpClient extends BaseHttpClient {
     mac.update(path.getBytes())
     new String(Base64.encodeBase64(mac.doFinal(md.digest())))
   }
-
-  private def generateUrl(endpoint: HttpEndpoint): String =
-    endpoint match {
-      case CANDLESTICKS    => s"$baseUrl$candlesticksEndpoint"
-      case WEBSOCKET_TOKEN => s"$baseUrl$websocketTokenEndpoint"
-    }
-
-  private def mapEndpointToString(endpoint: HttpEndpoint): String =
-    endpoint match {
-      case CANDLESTICKS    => candlesticksEndpoint
-      case WEBSOCKET_TOKEN => websocketTokenEndpoint
-    }
 }

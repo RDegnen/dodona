@@ -5,13 +5,14 @@ import scala.concurrent.{Await, ExecutionContext}
 import scala.util.{Failure, Success}
 
 import _root_.dodona.backtester.actors.{MainSystem, Wallet}
+import _root_.dodona.backtester.models.account.OrderModel
 import akka.actor.typed.scaladsl.AskPattern._
 import akka.actor.typed.{ActorRef, ActorSystem, Scheduler}
+import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.util.Timeout
 import io.circe.syntax._
-import _root_.dodona.backtester.models.account.OrderModel
 
 object AccountRoutes {
   def apply()(implicit
@@ -32,33 +33,53 @@ object AccountRoutes {
   }
 }
 
-class AccountRoutes(walletRef: ActorRef[Wallet.Protocol], orderModel: OrderModel)(implicit
+class AccountRoutes(
+    walletRef: ActorRef[Wallet.Protocol],
+    orderModel: OrderModel
+)(implicit
     ec: ExecutionContext,
     scheduler: Scheduler,
     timeout: Timeout
 ) {
   lazy val apiRoutes: Route = {
     pathPrefix("account") {
-      path("balance") {
-        parameters("symbol") { symbol =>
+      concat(
+        path("balance") {
           get {
-            onComplete(walletRef.ask(ref => Wallet.GetBalance(symbol, ref))) {
+            onComplete(walletRef.ask(ref => Wallet.GetBalance(ref))) {
               case Failure(exception) => complete(exception)
-              case Success(bl)        => complete(bl.value.asJson.toString())
+              case Success(value)     => complete(value.balance.asJson.toString)
+            }
+          }
+        },
+        path("order") {
+          post {
+            parameters("pair", "orderType", "quantity", "side") {
+              (pair, orderType, quantity, side) =>
+                onComplete(
+                  // Order type (MARKET, LIMIT, ect..) not implemented
+                  orderModel.placeOrder(pair, quantity.toDouble, side)
+                ) {
+                  case Failure(exception) =>
+                    val response = HttpResponse(
+                      StatusCodes.InternalServerError,
+                      entity = exception.toString
+                    )
+                    complete(response)
+                  case Success(value) => value match {
+                    case Left(value) =>
+                      val response = HttpResponse(
+                        StatusCodes.BadRequest,
+                        entity = value
+                      )
+                      complete(response)
+                    case Right(value) => complete(value.asJson.toString)
+                  }
+                }
             }
           }
         }
-      }
-      path("order") {
-        get {
-          parameters("symbol", "quantity", "side") { (symbol, quantity, side) =>
-            onComplete(orderModel.placeOrder(symbol, quantity.toDouble, side)) {
-              case Failure(exception) => complete(exception)
-              case Success(value) => complete(value)
-            }
-          }
-        }
-      }
+      )
     }
   }
 }

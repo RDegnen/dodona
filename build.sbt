@@ -24,7 +24,9 @@ lazy val dodona = (project in file("."))
       "com.typesafe.akka" %% "akka-http" % AkkaHttpVersion,
       "com.typesafe" % "config" % "1.4.0",
       "commons-codec" % "commons-codec" % "1.15",
-      "org.ta4j" % "ta4j-core" % "0.13"
+      "org.ta4j" % "ta4j-core" % "0.13",
+      "ch.qos.logback" % "logback-classic" % "1.2.3",
+      "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2"
     ),
     libraryDependencies ++= Seq(
       "com.typesafe.akka" %% "akka-stream",

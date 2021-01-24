@@ -5,14 +5,13 @@ import scala.concurrent.{Await, ExecutionContext, Future}
 
 import akka.actor.typed.scaladsl.AskPattern._
 import akka.actor.typed.{ActorRef, ActorSystem, Scheduler}
-import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
 import akka.util.Timeout
 import dodona.backtester.actors.{MainSystem, Prices, Wallet}
 import dodona.backtester.lib.Pairs
 import dodona.backtester.lib.config.{AccountConfig, DatabaseConfig}
 import dodona.backtester.lib.db.DB
 import dodona.backtester.lib.db.schema.OrdersDAO
-import dodona.backtester.lib.domain.Order
+import dodona.backtester.lib.domain.{Order, OrderFill}
 import slick.jdbc.SQLiteProfile
 
 object OrderModel {
@@ -55,7 +54,7 @@ class OrderModel(
       symbol: String,
       quantity: BigDecimal,
       side: String
-  ): Future[HttpResponse] = {
+  ): Future[Either[String, OrderFill]] = {
     implicit val timeout: Timeout = 10.seconds
     val pair = Pairs.getPair(symbol)
     side match {
@@ -70,7 +69,7 @@ class OrderModel(
       pair: (String, String)
   )(implicit
       timeout: Timeout
-  ): Future[HttpResponse] = {
+  ): Future[Either[String, OrderFill]] = {
     val marketValue = getMarketValue(symbol)
     val orderTotalValue = marketValue
       .map(marketPrice => {
@@ -89,17 +88,19 @@ class OrderModel(
       if (fiatBalance >= orderTotalValue) {
         val time = System.currentTimeMillis()
         executeOrder(symbol, buy, quantity, marketPrice, time)
-        walletRef ! Wallet.UpdateBalance(pair._1, quantity)
-        walletRef ! Wallet.UpdateBalance(
+        walletRef ! Wallet.UpdateAssetBalance(pair._1, quantity)
+        walletRef ! Wallet.UpdateAssetBalance(
           pair._2,
           fiatBalance - orderTotalValue
         )
-        HttpResponse(StatusCodes.OK)
+        // HttpResponse(StatusCodes.OK)
+        Right(OrderFill(symbol, "BUY", "TRADE", marketPrice, quantity, time))
       } else {
-        HttpResponse(
-          StatusCodes.BadRequest,
-          entity = s"Not enough ${pair._2} in your wallet"
-        )
+        // HttpResponse(
+        //   StatusCodes.BadRequest,
+        //   entity = s"Not enough ${pair._2} in your wallet"
+        // )
+        Left(s"Not enough ${pair._2} in your wallet")
       }
     }
 
@@ -116,7 +117,7 @@ class OrderModel(
       pair: (String, String)
   )(implicit
       timeout: Timeout
-  ): Future[HttpResponse] = {
+  ): Future[Either[String, OrderFill]] = {
     val marketValue = getMarketValue(symbol)
     val valueOfSell = marketValue
       .map(marketPrice => {
@@ -136,14 +137,16 @@ class OrderModel(
       if (coinBalance >= quantity) {
         val time = System.currentTimeMillis()
         executeOrder(symbol, sell, quantity, marketPrice, time)
-        walletRef ! Wallet.UpdateBalance(pair._2, fiatBalance + valueOfSell)
-        walletRef ! Wallet.UpdateBalance(pair._1, coinBalance - quantity)
-        HttpResponse(StatusCodes.OK)
+        walletRef ! Wallet.UpdateAssetBalance(pair._2, fiatBalance + valueOfSell)
+        walletRef ! Wallet.UpdateAssetBalance(pair._1, coinBalance - quantity)
+        // HttpResponse(StatusCodes.OK)
+        Right(OrderFill(symbol, "SELL", "TRADE", marketPrice, quantity, time))
       } else {
-        HttpResponse(
-          StatusCodes.BadRequest,
-          entity = s"Not enough ${pair._1} in your wallet"
-        )
+        // HttpResponse(
+        //   StatusCodes.BadRequest,
+        //   entity = s"Not enough ${pair._1} in your wallet"
+        // )
+        Left(s"Not enough ${pair._1} in your wallet")
       }
     }
 
@@ -166,7 +169,7 @@ class OrderModel(
       symbol: String
   )(implicit timeout: Timeout): Future[BigDecimal] =
     walletRef
-      .ask(ref => Wallet.GetBalance(symbol, ref))
+      .ask(ref => Wallet.GetAssetBalance(symbol, ref))
       .map(_.value)
 
   private def calculateOrderValue(
