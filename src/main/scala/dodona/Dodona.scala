@@ -9,6 +9,8 @@ import scala.concurrent.duration._
 import scala.util.Success
 import scala.util.Failure
 import dodona.strategies.meanreversion.MeanReversion
+import dodona.portfolio.portfolios.BacktesterPortfolio
+import dodona.execution.handlers.BacktesterExecutionHandler
 
 object DodonaConfig {
   val conf = ConfigFactory.load()
@@ -24,14 +26,19 @@ object Dodona extends App {
   implicit val ec = system.executionContext
   implicit val timeout: Timeout = 10.seconds
 
+  val pair = "ETHUSD"
   val strategy = new MeanReversion()
-  system.ask(ref => MainSystem.InitEvents(ref, strategy)).onComplete {
+  val portfolio = new BacktesterPortfolio("USD")
+  val executionHandler = new BacktesterExecutionHandler()
+  system.ask(ref => MainSystem.InitEvents(ref, strategy, portfolio, executionHandler)).onComplete {
     case Success(value) => {
       val reply = value.asInstanceOf[MainSystem.EventQueueReply]
       val eq = reply.actor
-      val dh = new BacktesterDataHandler("ETHUSD", 15, eq)
+      val dh = new BacktesterDataHandler(pair, 15, eq)
+      portfolio.initialize(dh, eq)
       dh.initialize
-      strategy.initialize(dh, eq)
+      strategy.initialize(dh, eq, pair)
+      executionHandler.initialize(eq)
     }
     case Failure(err) => {
       println(err)

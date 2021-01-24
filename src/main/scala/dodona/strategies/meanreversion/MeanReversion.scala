@@ -30,15 +30,18 @@ class MeanReversion(implicit
     ec: ExecutionContext
 ) extends IStrategy {
   private var strategy: BaseStrategy = _
-  // For testing
-  private var entered = false
-  private var exited = true
   private var dataHandler: BaseDataHandler = _
   private var eventQueue: ActorRef[EventQueue.Push] = _
+  private var tradingPair: String = _
 
-  def initialize(dh: BaseDataHandler, eq: ActorRef[EventQueue.Push]): Unit = {
+  def initialize(
+      dh: BaseDataHandler,
+      eq: ActorRef[EventQueue.Push],
+      pair: String
+  ): Unit = {
     dataHandler = dh
     eventQueue = eq
+    tradingPair = pair
     val series = dh.series
     val closePriceIndicator = new ClosePriceIndicator(series)
     val shortEma = new EMAIndicator(closePriceIndicator, 7)
@@ -53,29 +56,21 @@ class MeanReversion(implicit
     val endIndex = series.getEndIndex()
     val lastBar = series.getBar(endIndex)
     if (strategy.shouldEnter(endIndex)) {
-      if (!entered) {
-        if (exited) {
-          val event = EventHandler.SignalEvent(
-            lastBar.getClosePrice().doubleValue(),
-            Constants.OrderSides.BUY
-          )
-          eventQueue ! EventQueue.Push(event)
-          entered = true
-          exited = false
-        }
-      }
+      println("entering")
+      val event = EventHandler.SignalEvent(
+        tradingPair,
+        lastBar.getClosePrice().doubleValue(),
+        Constants.OrderSides.BUY
+      )
+      eventQueue ! EventQueue.Push(event)
     } else if (strategy.shouldExit(endIndex)) {
-      if (!exited) {
-        if (entered) {
-          val event = EventHandler.SignalEvent(
-            lastBar.getClosePrice().doubleValue(),
-            Constants.OrderSides.SELL
-          )
-          eventQueue ! EventQueue.Push(event)
-          entered = false
-          exited = true
-        }
-      }
+      println("exiting")
+      val event = EventHandler.SignalEvent(
+        tradingPair,
+        lastBar.getClosePrice().doubleValue(),
+        Constants.OrderSides.SELL
+      )
+      eventQueue ! EventQueue.Push(event)
     }
   }
 }

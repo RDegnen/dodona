@@ -32,7 +32,7 @@ class OrderModelTest extends AnyFunSpec with BeforeAndAfterAll with BeforeAndAft
   val patienceConfigDismissals = Dismissals(1)
   val pricesRef = testKit.spawn(Prices(), "prices")
   val walletRef = testKit.spawn(Wallet(), "wallet")
-  val walletProbe = testKit.createTestProbe[Wallet.BalanceValue]()
+  val walletProbe = testKit.createTestProbe[Wallet.AssetValue]()
   val ordersDao = new OrdersDAO(H2Profile)
   val database = new DB(DatabaseConfig.h2)
   val testOrderModel = new OrderModel(pricesRef, walletRef) {
@@ -62,8 +62,8 @@ class OrderModelTest extends AnyFunSpec with BeforeAndAfterAll with BeforeAndAft
       val order = testOrderModel.placeOrder(symbol, quantity, "BUY")
       order.onComplete {
         case Success(value) => 
-          walletRef ! Wallet.GetBalance("ETH", walletProbe.ref)
-          walletProbe.expectMessage(Wallet.BalanceValue(quantity))
+          walletRef ! Wallet.GetAssetBalance("ETH", walletProbe.ref)
+          walletProbe.expectMessage(Wallet.AssetValue(quantity))
           assert(value === HttpResponse(StatusCodes.OK))
           w.dismiss()
         case Failure(exception) => println(exception)
@@ -76,8 +76,8 @@ class OrderModelTest extends AnyFunSpec with BeforeAndAfterAll with BeforeAndAft
       val order = testOrderModel.placeOrder(symbol, 2, "SELL")
       order.onComplete {
         case Success(value) => 
-          walletRef ! Wallet.GetBalance("USD", walletProbe.ref)
-          walletProbe.expectMessage(Wallet.BalanceValue(1199.400))
+          walletRef ! Wallet.GetAssetBalance("USD", walletProbe.ref)
+          walletProbe.expectMessage(Wallet.AssetValue(1199.400))
           assert(value === HttpResponse(StatusCodes.OK))
           w.dismiss()
         case Failure(exception) => println(exception)

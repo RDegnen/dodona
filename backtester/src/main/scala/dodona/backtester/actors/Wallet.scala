@@ -6,10 +6,12 @@ import dodona.backtester.lib.config.AccountConfig
 
 object Wallet {
   sealed trait Protocol
-  final case class UpdateBalance(symbol: String, balance: BigDecimal) extends Protocol
-  final case class GetBalance(symbol: String, replyTo: ActorRef[BalanceValue]) extends Protocol
+  final case class UpdateAssetBalance(symbol: String, balance: BigDecimal) extends Protocol
+  final case class GetBalance(replyTo: ActorRef[BalanceValue]) extends Protocol
+  final case class GetAssetBalance(asset: String, replyTo: ActorRef[AssetValue]) extends Protocol
 
-  final case class BalanceValue(value: BigDecimal)
+  final case class BalanceValue(balance: Map[String, BigDecimal])
+  final case class AssetValue(value: BigDecimal)
 
   def apply(): Behavior[Protocol] =
     Behaviors.setup(ctx => {
@@ -26,16 +28,19 @@ class Wallet(ctx: ActorContext[Wallet.Protocol]) extends AbstractBehavior[Wallet
 
   override def onMessage(msg: Wallet.Protocol): Behavior[Wallet.Protocol] =
     msg match {
-      case UpdateBalance(symbol, balance) =>
+      case UpdateAssetBalance(symbol, balance) =>
         balances += (symbol -> balance)
         this
-      case GetBalance(symbol, replyTo) =>
-        balances.get(symbol) match {
-          case Some(value) => 
-            replyTo ! BalanceValue(value)
-            this
+      case GetBalance(replyTo) =>
+        replyTo ! BalanceValue(balances)
+        this
+      case GetAssetBalance(asset, replyTo) =>
+        balances.get(asset) match {
           case None => 
-            replyTo ! BalanceValue(0)
+            replyTo ! AssetValue(0)
+            this
+          case Some(value) => 
+            replyTo ! AssetValue(value)
             this
         }
     }

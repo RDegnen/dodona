@@ -78,7 +78,8 @@ class TradeModel(pricesRef: ActorRef[Prices.Protocol]) {
       val source = builder.add(Source.fromPublisher(p))
       val mapSourceToMsg = builder.add(
         Flow[tupleType]
-          .throttle(1, 1.millisecond)
+          // .throttle(1, 0.2.second)
+          .throttle(1, 2.millisecond)
           .map(m => Trade(m._1, m._2, m._3, m._4, m._5, m._6))
           .map(m => TextMessage(m.asJson.toString()))
       )
@@ -99,16 +100,4 @@ class TradeModel(pricesRef: ActorRef[Prices.Protocol]) {
       
       FlowShape(mapMsgToInt.in, mapSourceToMsg.out)
     })
-
-  private def flowFromPublisher(
-      p: Publisher[tupleType]
-  ): Flow[Message, Message, NotUsed] = {
-    val source = Source
-      .fromPublisher(p)
-      .throttle(1, 1.millisecond)
-      .map(m => Trade(m._1, m._2, m._3, m._4, m._5, m._6))
-      .map(m => TextMessage(m.asJson.toString()))
-
-    Flow.fromSinkAndSource(Sink.ignore, source)
-  }
 }

@@ -10,8 +10,9 @@ import akka.http.scaladsl.unmarshalling.Unmarshal
 import io.circe.Decoder
 import io.circe.parser.decode
 import dodona.MainSystem
+import com.typesafe.scalalogging.LazyLogging
 
-trait BaseHttpClient {
+trait BaseHttpClient extends LazyLogging {
   protected val baseUrl: String
 
   def generateRequest[T: Decoder](
@@ -40,6 +41,7 @@ trait BaseHttpClient {
         entity
       )
     )
+    // FIXME need far better error handling here
     val unmarshalled = response.flatMap { response =>
       Unmarshal(response.entity).to[String]
     }
@@ -52,7 +54,9 @@ trait BaseHttpClient {
     jsonFuture.flatMap(value => {
       decode[T](value) match {
         case Right(decoded) => promise.success(decoded).future
-        case Left(err) => promise.failure(err).future
+        case Left(err) =>
+          logger.error(err.getMessage)
+          promise.failure(err).future
       }
     })
   }
