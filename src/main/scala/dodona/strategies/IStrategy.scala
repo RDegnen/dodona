@@ -1,7 +1,7 @@
 package dodona.strategies
 
-import dodona.data.BaseDataHandler
 import akka.actor.typed.ActorRef
+import dodona.data.BaseDataHandler
 import dodona.events.EventQueue
 
 trait IStrategy {

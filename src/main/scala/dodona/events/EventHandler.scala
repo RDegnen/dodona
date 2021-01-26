@@ -1,12 +1,10 @@
 package dodona.events
 
-import akka.actor.typed.scaladsl.ActorContext
-import akka.actor.typed.scaladsl.AbstractBehavior
 import akka.actor.typed.Behavior
-import akka.actor.typed.scaladsl.Behaviors
-import dodona.strategies.IStrategy
-import dodona.portfolio.IPortfolio
+import akka.actor.typed.scaladsl.{AbstractBehavior, ActorContext, Behaviors}
 import dodona.execution.IExecutionHandler
+import dodona.portfolio.IPortfolio
+import dodona.strategies.IStrategy
 
 object EventHandler {
   sealed trait Protocol

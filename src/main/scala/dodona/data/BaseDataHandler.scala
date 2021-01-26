@@ -10,12 +10,12 @@ import akka.actor.typed.ActorSystem
 import akka.http.scaladsl.model.ws.Message
 import akka.stream.OverflowStrategy
 import akka.stream.scaladsl.{Keep, Sink, Source}
+import dodona.MainSystem
 import dodona.lib.domain.dodona.market.Candlestick
 import dodona.lib.http.BaseHttpClient
 import dodona.lib.websocket.IWebSocketClient
 import io.circe.Encoder
 import org.ta4j.core.{BaseBarSeries, BaseBarSeriesBuilder}
-import dodona.MainSystem
 
 abstract class BaseDataHandler(pair: String, interval: Int)(implicit val system: ActorSystem[MainSystem.Protocol], ec: ExecutionContext) {
   protected val candlestickBuilder = new CandlestickBuilder(interval)

@@ -1,16 +1,16 @@
 package dodona
 
+import scala.concurrent.duration._
+import scala.util.{Failure, Success}
+
 import akka.actor.typed.ActorSystem
-import com.typesafe.config.ConfigFactory
-import dodona.data.handlers.BacktesterDataHandler
 import akka.actor.typed.scaladsl.AskPattern._
 import akka.util.Timeout
-import scala.concurrent.duration._
-import scala.util.Success
-import scala.util.Failure
-import dodona.strategies.meanreversion.MeanReversion
-import dodona.portfolio.portfolios.BacktesterPortfolio
+import com.typesafe.config.ConfigFactory
+import dodona.data.handlers.BacktesterDataHandler
 import dodona.execution.handlers.BacktesterExecutionHandler
+import dodona.portfolio.portfolios.BacktesterPortfolio
+import dodona.strategies.meanreversion.MeanReversion
 
 object DodonaConfig {
   val conf = ConfigFactory.load()

@@ -5,9 +5,9 @@ import scala.concurrent.{ExecutionContext, Future}
 import akka.actor.typed.ActorSystem
 import akka.http.scaladsl.model.Uri.Query
 import akka.http.scaladsl.model.{HttpHeader, HttpMethod, RequestEntity}
+import dodona.MainSystem
 import dodona.lib.http.{BaseHttpClient, HttpAuthLevel}
 import io.circe.Decoder
-import dodona.MainSystem
 
 class BacktesterHttpClient extends BaseHttpClient {
   protected val baseUrl: String = "http://localhost:9090/api"

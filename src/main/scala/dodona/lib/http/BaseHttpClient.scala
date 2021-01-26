@@ -1,16 +1,19 @@
 package dodona.lib.http
 
+import java.io.IOException
+
 import scala.concurrent.{ExecutionContext, Future, Promise}
 
 import akka.actor.typed.ActorSystem
 import akka.http.scaladsl.Http
+import akka.http.scaladsl.model.StatusCodes.{ClientError, CustomStatusCode, Informational, Redirection, ServerError, Success}
 import akka.http.scaladsl.model.Uri.Query
 import akka.http.scaladsl.model.{HttpEntity, HttpHeader, HttpMethod, HttpRequest, RequestEntity, Uri}
 import akka.http.scaladsl.unmarshalling.Unmarshal
+import com.typesafe.scalalogging.LazyLogging
+import dodona.MainSystem
 import io.circe.Decoder
 import io.circe.parser.decode
-import dodona.MainSystem
-import com.typesafe.scalalogging.LazyLogging
 
 trait BaseHttpClient extends LazyLogging {
   protected val baseUrl: String
@@ -41,12 +44,25 @@ trait BaseHttpClient extends LazyLogging {
         entity
       )
     )
-    // FIXME need far better error handling here
-    val unmarshalled = response.flatMap { response =>
-      Unmarshal(response.entity).to[String]
-    }
 
-    decodeResponse[T](unmarshalled)
+    response.flatMap(res => {
+      val unmarshalled = Unmarshal(res.entity).to[String]
+      res.status match {
+        case CustomStatusCode(intValue) => ???
+        case ClientError(intValue) =>
+          unmarshalled.flatMap(body => {
+            Future.failed(new IOException(s"status: $intValue, message: $body"))
+          })
+        case ServerError(intValue) =>
+          unmarshalled.flatMap(body => {
+            Future.failed(new IOException(s"status: $intValue, message: $body"))
+          })
+        case Informational(intValue) => ???
+        case Redirection(intValue) => ???
+        case Success(intValue) => 
+          decodeResponse[T](unmarshalled)
+      }
+    })
   }
 
   private def decodeResponse[T: Decoder](jsonFuture: Future[String])(implicit ec: ExecutionContext): Future[T] = {

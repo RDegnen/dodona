@@ -1,18 +1,16 @@
 package dodona.execution.handlers
 
-import dodona.execution.IExecutionHandler
-import dodona.lib.http.{BaseHttpClient, PUBLIC}
-import dodona.lib.http.clients.BacktesterHttpClient
-import akka.http.scaladsl.model.HttpMethods
-import akka.actor.typed.ActorSystem
 import scala.concurrent.ExecutionContext
+import scala.util.{Failure, Success}
+
+import akka.actor.typed.{ActorRef, ActorSystem}
+import akka.http.scaladsl.model.HttpMethods
 import dodona.MainSystem
-import akka.actor.typed.ActorRef
-import dodona.events.EventQueue
+import dodona.events.{EventHandler, EventQueue}
+import dodona.execution.IExecutionHandler
 import dodona.lib.domain.dodona.account.OrderFill
-import scala.util.Failure
-import scala.util.Success
-import dodona.events.EventHandler
+import dodona.lib.http.clients.BacktesterHttpClient
+import dodona.lib.http.{BaseHttpClient, PUBLIC}
 
 class BacktesterExecutionHandler(implicit
     val system: ActorSystem[MainSystem.Protocol],

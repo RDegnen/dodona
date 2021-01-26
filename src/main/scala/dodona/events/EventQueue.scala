@@ -1,10 +1,7 @@
 package dodona.events
 
-import akka.actor.typed.scaladsl.ActorContext
-import akka.actor.typed.scaladsl.AbstractBehavior
-import akka.actor.typed.Behavior
-import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.ActorRef
+import akka.actor.typed.scaladsl.{AbstractBehavior, ActorContext, Behaviors}
+import akka.actor.typed.{ActorRef, Behavior}
 
 object EventQueue {
   final case class Push(value: EventHandler.Protocol)

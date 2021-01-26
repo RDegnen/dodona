@@ -1,19 +1,17 @@
 package dodona.portfolio.portfolios
 
-import akka.actor.typed.ActorRef
-import dodona.events.EventQueue
-import dodona.data.BaseDataHandler
-import dodona.events.EventHandler
-import dodona.lib.http.{BaseHttpClient, PUBLIC}
-import dodona.lib.http.clients.BacktesterHttpClient
-import akka.http.scaladsl.model.HttpMethods
-import akka.actor.typed.ActorSystem
-import dodona.MainSystem
 import scala.concurrent.ExecutionContext
-import scala.util.Success
-import scala.util.Failure
-import dodona.portfolio.Position
-import dodona.portfolio.BasePortfolio
+import scala.util.{Failure, Success}
+
+import akka.actor.typed.{ActorRef, ActorSystem}
+import akka.http.scaladsl.model.HttpMethods
+import dodona.MainSystem
+import dodona.data.BaseDataHandler
+import dodona.events.{EventHandler, EventQueue}
+import dodona.lib.http.clients.BacktesterHttpClient
+import dodona.lib.http.{BaseHttpClient, PUBLIC}
+import dodona.portfolio.{BasePortfolio, Position}
+import dodona.Constants
 
 class BacktesterPortfolio(quoteAsset: String)(implicit
     val system: ActorSystem[MainSystem.Protocol],
@@ -36,8 +34,17 @@ class BacktesterPortfolio(quoteAsset: String)(implicit
   def updateSignal(pair: String, price: BigDecimal, side: String): Unit = {
     splitPair(pair) match {
       case Some((base, quote)) =>
-        val orderSignal = generateOrder(base, quote, price, side)
-        eventQueue ! EventQueue.Push(orderSignal)
+        if (side == Constants.OrderSides.BUY) {
+          val orderSignal = generateBuyOrder(base, quote, price, side)
+          orderSignal.foreach(order => {
+            eventQueue ! EventQueue.Push(order)
+          })
+        } else if (side == Constants.OrderSides.SELL) {
+          val orderSignal = generateSellOrder(base, quote, price, side)
+          orderSignal.foreach(order => {
+            eventQueue ! EventQueue.Push(order)
+          })
+        }
       case None => println("Pair not found")
     }
   }
@@ -52,23 +59,43 @@ class BacktesterPortfolio(quoteAsset: String)(implicit
   ): Unit = {
     constructHoldings
     updatePosition(pair, action, status, price, quantity, transactionTime)
+    println(holdings)
   }
 
-  private def generateOrder(
+  private def generateBuyOrder(
       base: String,
       quote: String,
       price: BigDecimal,
       side: String
-  ): EventHandler.OrderEvent = {
+  ): Option[EventHandler.OrderEvent] = {
     // Incase I forget I am currently working on generating orders.
     // This is a super simple implamentation right now. Need to use 
     // price filters for actual impl https://binance-docs.github.io/apidocs/spot/en/#filters
     val quoteAmount: BigDecimal = holdings.getOrElse(quote, 0)
-    val fundsToRiskPercent = 0.25
-    val fundsToRisk = quoteAmount * fundsToRiskPercent
-    val quantity = fundsToRisk / price
-    val pair = s"$base$quote"
-    EventHandler.OrderEvent(pair, "MARKET", quantity, side)
+    if (quoteAmount > 0) {
+      val fundsToRiskPercent = 0.25
+      val fundsToRisk = quoteAmount * fundsToRiskPercent
+      val quantity = fundsToRisk / price
+      val pair = s"$base$quote"
+      Some(EventHandler.OrderEvent(pair, "MARKET", quantity, side))
+    } else {
+      None
+    }
+  }
+
+  private def generateSellOrder(
+      base: String,
+      quote: String,
+      price: BigDecimal,
+      side: String
+  ): Option[EventHandler.OrderEvent] = {
+    val baseAmount: BigDecimal = holdings.getOrElse(base, 0)
+    if (baseAmount > 0) {
+      val pair = s"$base$quote"
+      Some(EventHandler.OrderEvent(pair, "MARKET", baseAmount, side))
+    } else {
+      None
+    }
   }
 
   private def constructHoldings(): Unit = {

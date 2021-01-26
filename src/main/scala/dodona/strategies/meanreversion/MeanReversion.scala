@@ -2,21 +2,18 @@ package dodona.strategies.meanreversion
 
 import scala.concurrent.ExecutionContext
 
-import akka.actor.typed.ActorSystem
+import akka.actor.typed.{ActorRef, ActorSystem}
+import dodona.data.BaseDataHandler
+import dodona.events.{EventHandler, EventQueue}
+import dodona.strategies.IStrategy
+import dodona.{Constants, MainSystem}
+import org.ta4j.core.BaseStrategy
 import org.ta4j.core.indicators.EMAIndicator
 import org.ta4j.core.indicators.helpers.ClosePriceIndicator
 import org.ta4j.core.trading.rules.{
   CrossedDownIndicatorRule,
   CrossedUpIndicatorRule
 }
-import org.ta4j.core.BaseStrategy
-import dodona.MainSystem
-import akka.actor.typed.ActorRef
-import dodona.events.EventQueue
-import dodona.data.BaseDataHandler
-import dodona.strategies.IStrategy
-import dodona.events.EventHandler
-import dodona.Constants
 
 /**
   * This class is purly for testing and figuring out how
@@ -56,7 +53,6 @@ class MeanReversion(implicit
     val endIndex = series.getEndIndex()
     val lastBar = series.getBar(endIndex)
     if (strategy.shouldEnter(endIndex)) {
-      println("entering")
       val event = EventHandler.SignalEvent(
         tradingPair,
         lastBar.getClosePrice().doubleValue(),
@@ -64,7 +60,6 @@ class MeanReversion(implicit
       )
       eventQueue ! EventQueue.Push(event)
     } else if (strategy.shouldExit(endIndex)) {
-      println("exiting")
       val event = EventHandler.SignalEvent(
         tradingPair,
         lastBar.getClosePrice().doubleValue(),

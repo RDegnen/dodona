@@ -3,20 +3,18 @@ package dodona.data.handlers
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
-import akka.actor.typed.ActorSystem
+import akka.actor.typed.{ActorRef, ActorSystem}
 import akka.http.scaladsl.model.HttpMethods
 import akka.http.scaladsl.model.ws.Message
 import dodona.Constants.BACKTESTER_WS_URL
+import dodona.MainSystem
 import dodona.data.BaseDataHandler
+import dodona.events.{EventHandler, EventQueue}
 import dodona.lib.domain.dodona.market.{Candlestick, Trade}
 import dodona.lib.http.clients.BacktesterHttpClient
 import dodona.lib.http.{BaseHttpClient, PUBLIC}
 import dodona.lib.websocket.{IWebSocketClient, WebSocketClient}
 import io.circe.parser.decode
-import dodona.MainSystem
-import akka.actor.typed.ActorRef
-import dodona.events.EventHandler
-import dodona.events.EventQueue
 
 class BacktesterDataHandler(pair: String, interval: Int, eq: ActorRef[EventQueue.Push])(implicit
     override val system: ActorSystem[MainSystem.Protocol],

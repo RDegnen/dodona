@@ -9,11 +9,10 @@ import akka.actor.typed.ActorSystem
 import akka.http.scaladsl.model.Uri.Query
 import akka.http.scaladsl.model.headers.RawHeader
 import akka.http.scaladsl.model.{HttpHeader, HttpMethod, RequestEntity}
-import dodona.DodonaConfig
 import dodona.lib.http.{BaseHttpClient, HttpAuthLevel, PUBLIC, SIGNED}
+import dodona.{DodonaConfig, MainSystem}
 import io.circe.Decoder
 import org.apache.commons.codec.binary.Hex
-import dodona.MainSystem
 
 class BinanceHttpClient extends BaseHttpClient {
   protected val baseUrl: String = "https://api.binance.us"
