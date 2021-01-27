@@ -65,24 +65,31 @@ object Filter {
 object PriceFilter {
   lazy implicit val PriceFilterDecoder: Decoder[PriceFilter] = deriveDecoder
 }
+
 object PercentPrice {
   lazy implicit val PriceFilterDecoder: Decoder[PercentPrice] = deriveDecoder
 }
+
 object LotSize {
   lazy implicit val PriceFilterDecoder: Decoder[LotSize] = deriveDecoder
 }
+
 object MinNotational {
   lazy implicit val PriceFilterDecoder: Decoder[MinNotational] = deriveDecoder
 }
+
 object IcebergParts {
   lazy implicit val PriceFilterDecoder: Decoder[IcebergParts] = deriveDecoder
 }
+
 object MarketLotSize {
   lazy implicit val PriceFilterDecoder: Decoder[MarketLotSize] = deriveDecoder
 }
+
 object MaxNumOrders {
   lazy implicit val PriceFilterDecoder: Decoder[MaxNumOrders] = deriveDecoder
 }
+
 object MaxNumAlgoOrders {
   lazy implicit val PriceFilterDecoder: Decoder[MaxNumAlgoOrders] = deriveDecoder
 }
