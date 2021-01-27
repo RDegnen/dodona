@@ -12,6 +12,7 @@ import dodona.lib.http.clients.BacktesterHttpClient
 import dodona.lib.http.{BaseHttpClient, PUBLIC}
 import dodona.portfolio.{BasePortfolio, Position}
 import dodona.Constants
+import dodona.lib.domain.dodona.market.ExchangeInfo
 
 class BacktesterPortfolio(quoteAsset: String)(implicit
     val system: ActorSystem[MainSystem.Protocol],
@@ -29,6 +30,7 @@ class BacktesterPortfolio(quoteAsset: String)(implicit
     dataHandler = dh
     eventQueue = eq
     constructHoldings
+    getExchangeInfo
   }
 
   def updateSignal(pair: String, price: BigDecimal, side: String): Unit = {
@@ -59,7 +61,7 @@ class BacktesterPortfolio(quoteAsset: String)(implicit
   ): Unit = {
     constructHoldings
     updatePosition(pair, action, status, price, quantity, transactionTime)
-    println(holdings)
+    // println(holdings)
   }
 
   private def generateBuyOrder(
@@ -123,5 +125,16 @@ class BacktesterPortfolio(quoteAsset: String)(implicit
   ): Unit = {
     val position = Position(action, status, price, quantity, transactionTime)
     positions += (pair -> position)
+  }
+
+  private def getExchangeInfo(): Unit = {
+    httpClient.generateRequest[ExchangeInfo](
+      PUBLIC,
+      HttpMethods.GET,
+      "/market/exchangeInfo"
+    ).onComplete {
+      case Success(value) => println(value)
+      case Failure(exception) => println(exception)
+    }
   }
 }
