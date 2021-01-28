@@ -13,6 +13,9 @@ import dodona.lib.http.{BaseHttpClient, PUBLIC}
 import dodona.portfolio.{BasePortfolio, Position}
 import dodona.Constants
 import dodona.lib.domain.dodona.market.ExchangeInfo
+import dodona.lib.domain.dodona.market.LotSize
+import dodona.lib.domain.dodona.market.Filter
+import dodona.lib.domain.dodona.market.Symbol
 
 class BacktesterPortfolio(quoteAsset: String)(implicit
     val system: ActorSystem[MainSystem.Protocol],
@@ -21,10 +24,9 @@ class BacktesterPortfolio(quoteAsset: String)(implicit
   protected val httpClient: BaseHttpClient = new BacktesterHttpClient()
   private var dataHandler: BaseDataHandler = _
   private var eventQueue: ActorRef[EventQueue.Push] = _
-  // Held assets
   private var holdings: Map[String, BigDecimal] = Map()
-  // Open and previous orders
   private var positions: Map[String, Position] = Map()
+  private var symbols: List[Symbol] = _
 
   def initialize(dh: BaseDataHandler, eq: ActorRef[EventQueue.Push]): Unit = {
     dataHandler = dh
@@ -61,7 +63,6 @@ class BacktesterPortfolio(quoteAsset: String)(implicit
   ): Unit = {
     constructHoldings
     updatePosition(pair, action, status, price, quantity, transactionTime)
-    // println(holdings)
   }
 
   private def generateBuyOrder(
@@ -70,19 +71,25 @@ class BacktesterPortfolio(quoteAsset: String)(implicit
       price: BigDecimal,
       side: String
   ): Option[EventHandler.OrderEvent] = {
-    // Incase I forget I am currently working on generating orders.
-    // This is a super simple implamentation right now. Need to use 
-    // price filters for actual impl https://binance-docs.github.io/apidocs/spot/en/#filters
-    val quoteAmount: BigDecimal = holdings.getOrElse(quote, 0)
-    if (quoteAmount > 0) {
-      val fundsToRiskPercent = 0.25
-      val fundsToRisk = quoteAmount * fundsToRiskPercent
-      val quantity = fundsToRisk / price
-      val pair = s"$base$quote"
-      Some(EventHandler.OrderEvent(pair, "MARKET", quantity, side))
-    } else {
-      None
-    }
+    val pair = s"$base$quote"
+    val lotSize = getFilters(pair)
+      .flatMap(filters => {
+        filters
+          .find {
+            case LotSize(_, _, _, _) => true
+            case _                   => false
+          }
+          .asInstanceOf[Option[LotSize]]
+      })
+
+    for {
+      fundsToRisk <- holdings.get(quote).map(value => value * 0.25)
+      ls <- lotSize
+      quantity <- Some(
+        ((fundsToRisk / price) / ls.stepSize)
+          .setScale(0, BigDecimal.RoundingMode.HALF_UP) * ls.stepSize
+      )
+    } yield EventHandler.OrderEvent(pair, "MARKET", quantity, side)
   }
 
   private def generateSellOrder(
@@ -91,13 +98,9 @@ class BacktesterPortfolio(quoteAsset: String)(implicit
       price: BigDecimal,
       side: String
   ): Option[EventHandler.OrderEvent] = {
-    val baseAmount: BigDecimal = holdings.getOrElse(base, 0)
-    if (baseAmount > 0) {
-      val pair = s"$base$quote"
-      Some(EventHandler.OrderEvent(pair, "MARKET", baseAmount, side))
-    } else {
-      None
-    }
+    for {
+      baseAmount <- holdings.get(base)
+    } yield EventHandler.OrderEvent(s"$base$quote", "MARKET", baseAmount, side)
   }
 
   private def constructHoldings(): Unit = {
@@ -128,13 +131,21 @@ class BacktesterPortfolio(quoteAsset: String)(implicit
   }
 
   private def getExchangeInfo(): Unit = {
-    httpClient.generateRequest[ExchangeInfo](
-      PUBLIC,
-      HttpMethods.GET,
-      "/market/exchangeInfo"
-    ).onComplete {
-      case Success(value) => println(value)
-      case Failure(exception) => println(exception)
-    }
+    httpClient
+      .generateRequest[ExchangeInfo](
+        PUBLIC,
+        HttpMethods.GET,
+        "/market/exchangeInfo"
+      )
+      .onComplete {
+        case Success(value) =>
+          symbols = value.symbols
+        case Failure(exception) => println(exception)
+      }
   }
+
+  private def getFilters(pair: String): Option[List[Filter]] =
+    symbols
+      .find(symbol => symbol.symbol == pair)
+      .map(symbol => symbol.filters)
 }
