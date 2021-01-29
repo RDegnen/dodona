@@ -63,6 +63,7 @@ class BacktesterPortfolio(quoteAsset: String)(implicit
   ): Unit = {
     constructHoldings
     updatePosition(pair, action, status, price, quantity, transactionTime)
+    println(holdings)
   }
 
   private def generateBuyOrder(

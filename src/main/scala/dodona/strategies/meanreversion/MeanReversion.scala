@@ -30,6 +30,7 @@ class MeanReversion(implicit
   private var dataHandler: BaseDataHandler = _
   private var eventQueue: ActorRef[EventQueue.Push] = _
   private var tradingPair: String = _
+  private var tradeOpen: Boolean = false
 
   def initialize(
       dh: BaseDataHandler,
@@ -52,20 +53,22 @@ class MeanReversion(implicit
     val series = dataHandler.series
     val endIndex = series.getEndIndex()
     val lastBar = series.getBar(endIndex)
-    if (strategy.shouldEnter(endIndex)) {
+    if (strategy.shouldEnter(endIndex) && !tradeOpen) {
       val event = EventHandler.SignalEvent(
         tradingPair,
         lastBar.getClosePrice().doubleValue(),
         Constants.OrderSides.BUY
       )
       eventQueue ! EventQueue.Push(event)
-    } else if (strategy.shouldExit(endIndex)) {
+      tradeOpen = true
+    } else if (strategy.shouldExit(endIndex) && tradeOpen) {
       val event = EventHandler.SignalEvent(
         tradingPair,
         lastBar.getClosePrice().doubleValue(),
         Constants.OrderSides.SELL
       )
       eventQueue ! EventQueue.Push(event)
+      tradeOpen = false
     }
   }
 }
