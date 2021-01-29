@@ -13,6 +13,8 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.util.Timeout
 import io.circe.syntax._
+import _root_.dodona.backtester.models.account.OrderEvents
+import _root_.dodona.backtester.models.account.IOrderEvents
 
 object AccountRoutes {
   def apply()(implicit
@@ -27,15 +29,17 @@ object AccountRoutes {
         10.seconds
       )
       .asInstanceOf[MainSystem.WalletActor]
-    val orderModel = OrderModel()
+    val orderEvents = new OrderEvents()
+    val orderModel = OrderModel(orderEvents)
 
-    new AccountRoutes(wallet.actor, orderModel)
+    new AccountRoutes(wallet.actor, orderModel, orderEvents)
   }
 }
 
 class AccountRoutes(
     walletRef: ActorRef[Wallet.Protocol],
-    orderModel: OrderModel
+    orderModel: OrderModel,
+    orderEvents: IOrderEvents
 )(implicit
     ec: ExecutionContext,
     scheduler: Scheduler,
@@ -78,6 +82,16 @@ class AccountRoutes(
                 }
             }
           }
+        }
+      )
+    }
+  }
+
+  lazy val webSocketRoutes: Route = {
+    pathPrefix("account") {
+      concat(
+        path("order_events") {
+          handleWebSocketMessages(orderEvents.subscribe)
         }
       )
     }

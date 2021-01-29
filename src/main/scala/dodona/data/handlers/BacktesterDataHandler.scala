@@ -28,7 +28,7 @@ class BacktesterDataHandler(pair: String, interval: Int, eq: ActorRef[EventQueue
       case Success(candles) => {
         candles.foreach(addBarToSeries)
         openSocket[Trade](
-          s"$BACKTESTER_WS_URL/trade?symbol=${pair}&timeToBegin=1569222899999",
+          s"$BACKTESTER_WS_URL/market/trade?symbol=${pair}&timeToBegin=1569222899999",
           onMessage
         )
       }

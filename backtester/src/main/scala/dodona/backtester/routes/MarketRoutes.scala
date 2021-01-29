@@ -1,21 +1,24 @@
 package dodona.backtester.routes
 
-import akka.http.scaladsl.server.Route
-import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.HttpRequest
-import akka.http.scaladsl.model.HttpMethods
-import akka.http.scaladsl.model.Uri
-import akka.actor.typed.ActorSystem
-import _root_.dodona.backtester.actors.MainSystem
-import scala.util.Success
-import scala.util.Failure
 import scala.concurrent.ExecutionContext
+import scala.util.{Failure, Success}
+
+import _root_.dodona.backtester.actors.MainSystem
+import _root_.dodona.backtester.models.{CandlestickModel, TradeModel}
+import akka.actor.typed.ActorSystem
+import akka.http.scaladsl.Http
+import akka.http.scaladsl.model.{HttpMethods, HttpRequest, Uri}
+import akka.http.scaladsl.server.Directives._
+import akka.http.scaladsl.server.Route
+import io.circe.syntax._
 
 class MarketRoutes(implicit
     system: ActorSystem[MainSystem.Protocol],
     ec: ExecutionContext
 ) {
+  private val tradeModel = TradeModel()
+  private val candleStickModel = new CandlestickModel()
+
   lazy val apiRoutes: Route = {
     pathPrefix("market") {
       concat(
@@ -32,6 +35,34 @@ class MarketRoutes(implicit
               case Failure(exception) => complete(exception)
               case Success(value)     => complete(value)
             }
+          }
+        },
+        path("OHLC") {
+          parameters("symbol") { symbol =>
+            get {
+              onComplete(candleStickModel.getOHLCbySymbol(symbol)) {
+                case Failure(exception) => complete(exception)
+                case Success(value) => complete(value.asJson.toString())
+              }
+            }
+          }
+        }
+      )
+    }
+  }
+
+  lazy val webSocketRoutes: Route = {
+    pathPrefix("market") {
+      concat(
+        path("trade") {
+          parameters("symbol", "timeToBegin".withDefault("0")) {
+            (symbol, timeToBegin) =>
+              handleWebSocketMessages(
+                tradeModel.streamTradesBySymbolAndTime(
+                  symbol,
+                  timeToBegin.toLong
+                )
+              )
           }
         }
       )

@@ -15,7 +15,7 @@ import dodona.backtester.lib.domain.{Order, OrderFill}
 import slick.jdbc.SQLiteProfile
 
 object OrderModel {
-  def apply()(implicit system: ActorSystem[MainSystem.Protocol]): OrderModel = {
+  def apply(orderEvents: IOrderEvents)(implicit system: ActorSystem[MainSystem.Protocol]): OrderModel = {
     implicit val timeout: Timeout = 10.seconds
     implicit val ec = system.executionContext
 
@@ -33,13 +33,14 @@ object OrderModel {
       )
       .asInstanceOf[MainSystem.WalletActor]
 
-    new OrderModel(prices.actor, wallet.actor)
+    new OrderModel(prices.actor, wallet.actor, orderEvents)
   }
 }
 
 class OrderModel(
     pricesRef: ActorRef[Prices.Protocol],
-    walletRef: ActorRef[Wallet.Protocol]
+    walletRef: ActorRef[Wallet.Protocol],
+    orderEvents: IOrderEvents
 )(implicit
     scheduler: Scheduler,
     ec: ExecutionContext
@@ -93,13 +94,9 @@ class OrderModel(
           pair._2,
           fiatBalance - orderTotalValue
         )
-        // HttpResponse(StatusCodes.OK)
+        orderEvents.push(OrderFill(symbol, "BUY", "TRADE", marketPrice, quantity, time))
         Right(OrderFill(symbol, "BUY", "TRADE", marketPrice, quantity, time))
       } else {
-        // HttpResponse(
-        //   StatusCodes.BadRequest,
-        //   entity = s"Not enough ${pair._2} in your wallet"
-        // )
         Left(s"Not enough ${pair._2} in your wallet")
       }
     }
@@ -139,13 +136,9 @@ class OrderModel(
         executeOrder(symbol, sell, quantity, marketPrice, time)
         walletRef ! Wallet.UpdateAssetBalance(pair._2, fiatBalance + valueOfSell)
         walletRef ! Wallet.UpdateAssetBalance(pair._1, coinBalance - quantity)
-        // HttpResponse(StatusCodes.OK)
+        orderEvents.push(OrderFill(symbol, "SELL", "TRADE", marketPrice, quantity, time))
         Right(OrderFill(symbol, "SELL", "TRADE", marketPrice, quantity, time))
       } else {
-        // HttpResponse(
-        //   StatusCodes.BadRequest,
-        //   entity = s"Not enough ${pair._1} in your wallet"
-        // )
         Left(s"Not enough ${pair._1} in your wallet")
       }
     }

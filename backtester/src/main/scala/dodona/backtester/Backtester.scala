@@ -8,8 +8,7 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import com.typesafe.config.ConfigFactory
 import dodona.backtester.actors.MainSystem
-import dodona.backtester.routes.{AccountRoutes, CandlestickRoutes, TradeRoutes}
-import dodona.backtester.routes.MarketRoutes
+import dodona.backtester.routes.{AccountRoutes, MarketRoutes}
 
 object BacktesterConfig {
   val conf = ConfigFactory.load()
@@ -21,14 +20,11 @@ object Backtester extends App {
   implicit val system = ActorSystem(MainSystem(), "main")
   implicit val ec = system.executionContext
 
-  val candlestickRoutes = new CandlestickRoutes()
-  val tradeRoutes = new TradeRoutes()
   val accountRoutes = AccountRoutes()
   val marketRoutes = new MarketRoutes()
   val apiRoutes: Route = {
     pathPrefix("api") {
       concat(
-        candlestickRoutes.apiRoutes,
         accountRoutes.apiRoutes,
         marketRoutes.apiRoutes
       ) 
@@ -36,7 +32,10 @@ object Backtester extends App {
   }
   val webSocketRoutes: Route = {
     pathPrefix("ws") {
-      concat(tradeRoutes.webSocketRoutes)
+      concat(
+        marketRoutes.webSocketRoutes,
+        accountRoutes.webSocketRoutes
+      )
     }
   }
   val routes: Route = {
