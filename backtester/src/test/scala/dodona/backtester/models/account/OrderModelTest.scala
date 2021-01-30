@@ -35,53 +35,53 @@ class OrderModelTest extends AnyFunSpec with BeforeAndAfterAll with BeforeAndAft
   val walletProbe = testKit.createTestProbe[Wallet.AssetValue]()
   val ordersDao = new OrdersDAO(H2Profile)
   val database = new DB(DatabaseConfig.h2)
-  val testOrderModel = new OrderModel(pricesRef, walletRef) {
-    override val dao: OrdersDAO = ordersDao
-    override val db: DB = database
-  }
+  // val testOrderModel = new OrderModel(pricesRef, walletRef) {
+  //   override val dao: OrdersDAO = ordersDao
+  //   override val db: DB = database
+  // }
   
-  override protected def beforeAll(): Unit = {
-    ordersDao.create
-    pricesRef ! Prices.AdjustPrice(symbol, 100)
-  }
+  // override protected def beforeAll(): Unit = {
+  //   ordersDao.create
+  //   pricesRef ! Prices.AdjustPrice(symbol, 100)
+  // }
 
-  override protected def afterAll(): Unit = {
-    testKit.stop(pricesRef)
-    testKit.stop(walletRef)
-    testKit.shutdownTestKit()
-    database.close
-  }
+  // override protected def afterAll(): Unit = {
+  //   testKit.stop(pricesRef)
+  //   testKit.stop(walletRef)
+  //   testKit.shutdownTestKit()
+  //   database.close
+  // }
 
-  override protected def afterEach(): Unit = {
-    w.await(patienceConfigTimeout, patienceConfigDismissals)
-  }
+  // override protected def afterEach(): Unit = {
+  //   w.await(patienceConfigTimeout, patienceConfigDismissals)
+  // }
 
-  describe("OrderModel") {
-    it("should place a buy order") {
-      val quantity = 2
-      val order = testOrderModel.placeOrder(symbol, quantity, "BUY")
-      order.onComplete {
-        case Success(value) => 
-          walletRef ! Wallet.GetAssetBalance("ETH", walletProbe.ref)
-          walletProbe.expectMessage(Wallet.AssetValue(quantity))
-          assert(value === HttpResponse(StatusCodes.OK))
-          w.dismiss()
-        case Failure(exception) => println(exception)
-      }
-    }
+  // describe("OrderModel") {
+  //   it("should place a buy order") {
+  //     val quantity = 2
+  //     val order = testOrderModel.placeOrder(symbol, quantity, "BUY")
+  //     order.onComplete {
+  //       case Success(value) => 
+  //         walletRef ! Wallet.GetAssetBalance("ETH", walletProbe.ref)
+  //         walletProbe.expectMessage(Wallet.AssetValue(quantity))
+  //         assert(value === HttpResponse(StatusCodes.OK))
+  //         w.dismiss()
+  //       case Failure(exception) => println(exception)
+  //     }
+  //   }
 
-    it("should place a sell order") {
-      pricesRef ! Prices.AdjustPrice(symbol, 200)
+  //   it("should place a sell order") {
+  //     pricesRef ! Prices.AdjustPrice(symbol, 200)
 
-      val order = testOrderModel.placeOrder(symbol, 2, "SELL")
-      order.onComplete {
-        case Success(value) => 
-          walletRef ! Wallet.GetAssetBalance("USD", walletProbe.ref)
-          walletProbe.expectMessage(Wallet.AssetValue(1199.400))
-          assert(value === HttpResponse(StatusCodes.OK))
-          w.dismiss()
-        case Failure(exception) => println(exception)
-      }
-    }
-  }
+  //     val order = testOrderModel.placeOrder(symbol, 2, "SELL")
+  //     order.onComplete {
+  //       case Success(value) => 
+  //         walletRef ! Wallet.GetAssetBalance("USD", walletProbe.ref)
+  //         walletProbe.expectMessage(Wallet.AssetValue(1199.400))
+  //         assert(value === HttpResponse(StatusCodes.OK))
+  //         w.dismiss()
+  //       case Failure(exception) => println(exception)
+  //     }
+  //   }
+  // }
 }

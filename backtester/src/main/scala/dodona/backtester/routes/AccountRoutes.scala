@@ -15,6 +15,9 @@ import akka.util.Timeout
 import io.circe.syntax._
 import _root_.dodona.backtester.models.account.OrderEvents
 import _root_.dodona.backtester.models.account.IOrderEvents
+import akka.http.scaladsl.model.ws.Message
+import akka.stream.scaladsl.Flow
+import java.util.concurrent.atomic.AtomicInteger
 
 object AccountRoutes {
   def apply()(implicit
@@ -91,7 +94,21 @@ class AccountRoutes(
     pathPrefix("account") {
       concat(
         path("order_events") {
-          handleWebSocketMessages(orderEvents.subscribe)
+          val numOfClients = new AtomicInteger(0)
+          val flow: Flow[Message, Message, Any] =
+            orderEvents.subscribe.watchTermination() { (_, f) =>
+              numOfClients.incrementAndGet()
+              println(s"Client connected to order_events. Current number of clients: $numOfClients")
+              f.onComplete {
+                case Success(_) =>
+                  numOfClients.decrementAndGet()
+                  println(s"Client has disconnected from order_events. Current number of clients: $numOfClients")
+                case Failure(ex) =>
+                  numOfClients.decrementAndGet()
+                  println(s"order_events disconnection failure (number of clients: $numOfClients): $ex")
+              }
+            }
+          handleWebSocketMessages(flow)
         }
       )
     }

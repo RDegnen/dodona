@@ -55,7 +55,7 @@ class OrderModel(
       symbol: String,
       quantity: BigDecimal,
       side: String
-  ): Future[Either[String, OrderFill]] = {
+  ): Future[Either[String, String]] = {
     implicit val timeout: Timeout = 10.seconds
     val pair = Pairs.getPair(symbol)
     side match {
@@ -70,7 +70,7 @@ class OrderModel(
       pair: (String, String)
   )(implicit
       timeout: Timeout
-  ): Future[Either[String, OrderFill]] = {
+  ): Future[Either[String, String]] = {
     val marketValue = getMarketValue(symbol)
     val orderTotalValue = marketValue
       .map(marketPrice => {
@@ -95,7 +95,7 @@ class OrderModel(
           fiatBalance - orderTotalValue
         )
         orderEvents.push(OrderFill(symbol, "BUY", "TRADE", marketPrice, quantity, time))
-        Right(OrderFill(symbol, "BUY", "TRADE", marketPrice, quantity, time))
+        Right("Buy order placed")
       } else {
         Left(s"Not enough ${pair._2} in your wallet")
       }
@@ -114,7 +114,7 @@ class OrderModel(
       pair: (String, String)
   )(implicit
       timeout: Timeout
-  ): Future[Either[String, OrderFill]] = {
+  ): Future[Either[String, String]] = {
     val marketValue = getMarketValue(symbol)
     val valueOfSell = marketValue
       .map(marketPrice => {
@@ -137,7 +137,7 @@ class OrderModel(
         walletRef ! Wallet.UpdateAssetBalance(pair._2, fiatBalance + valueOfSell)
         walletRef ! Wallet.UpdateAssetBalance(pair._1, coinBalance - quantity)
         orderEvents.push(OrderFill(symbol, "SELL", "TRADE", marketPrice, quantity, time))
-        Right(OrderFill(symbol, "SELL", "TRADE", marketPrice, quantity, time))
+        Right("Sell order placed")
       } else {
         Left(s"Not enough ${pair._1} in your wallet")
       }

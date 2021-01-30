@@ -11,6 +11,7 @@ import akka.stream.scaladsl.Sink
 import akka.http.scaladsl.model.ws.TextMessage
 import io.circe.syntax._
 import akka.stream.scaladsl.Keep
+import akka.stream.scaladsl.BroadcastHub
 
 trait IOrderEvents {
   def push(event: OrderFill): Unit
@@ -21,7 +22,7 @@ trait IOrderEvents {
 class OrderEvents(implicit val materializer: Materializer) extends IOrderEvents {
   private val (queue, pub) = Source
     .queue[OrderFill](50, OverflowStrategy.backpressure)
-    .toMat(Sink.asPublisher(false))(Keep.both)
+    .toMat(BroadcastHub.sink)(Keep.both)
     .run()
 
   def push(event: OrderFill): Unit = {
@@ -29,9 +30,7 @@ class OrderEvents(implicit val materializer: Materializer) extends IOrderEvents 
   }
 
   def subscribe(): Flow[Message, Message, NotUsed] = {
-    val incomingMessages = Flow[Message].to(Sink.ignore)
-    val outgoingMessages = Source.fromPublisher(pub).map(m => TextMessage(m.asJson.toString()))
-
-    Flow.fromSinkAndSource(incomingMessages, outgoingMessages)
+    val outgoingMessages = pub.map(m => TextMessage(m.asJson.toString()))
+    Flow.fromSinkAndSource(Sink.ignore, outgoingMessages)
   }
 }

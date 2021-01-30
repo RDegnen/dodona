@@ -2,6 +2,7 @@ package dodona.lib.domain.dodona.account
 
 import io.circe.Decoder
 import io.circe.generic.semiauto._
+import io.circe.Encoder
 
 case class OrderFill(
     pair: String,
@@ -14,4 +15,5 @@ case class OrderFill(
 
 object OrderFill {
   lazy implicit val OrderFillDecoder: Decoder[OrderFill] = deriveDecoder
+  lazy implicit val OrderFillEncoder: Encoder[OrderFill] = deriveEncoder
 }
