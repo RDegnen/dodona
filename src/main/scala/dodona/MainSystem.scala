@@ -5,7 +5,7 @@ import akka.actor.typed.{ActorRef, Behavior}
 import dodona.events.{EventHandler, EventQueue}
 import dodona.execution.IExecutionHandler
 import dodona.portfolio.IPortfolio
-import dodona.strategies.IStrategy
+import dodona.strategy.IStrategy
 
 object MainSystem {
   sealed trait Protocol

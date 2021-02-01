@@ -1,4 +1,4 @@
-package dodona.strategies
+package dodona.strategy
 
 import akka.actor.typed.ActorRef
 import dodona.data.BaseDataHandler

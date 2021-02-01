@@ -41,7 +41,7 @@ class BacktesterExecutionHandler(implicit
       Map("pair" -> pair, "orderType" -> orderType, "quantity" -> quantity.toString, "side" -> side)
     ).onComplete {
       case Failure(exception) => println(exception)
-      case Success(value) => ???
+      case Success(value) =>
     }
   }
 

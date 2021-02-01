@@ -8,6 +8,7 @@ final case class Candlestick(
   open: BigDecimal,
   high: BigDecimal,
   low: BigDecimal,
+  volume: BigDecimal,
   close: BigDecimal,
 )
 
@@ -25,8 +26,9 @@ object Candlestick {
       closec = lowc.right
       close <- closec.as[BigDecimal]
       volumec = closec.right
+      volume <- volumec.as[BigDecimal]
       closeTimec = volumec.right
       closeTime <- closeTimec.as[Long]
-    } yield Candlestick(openTime, closeTime, open, high, low, close)
+    } yield Candlestick(openTime, closeTime, open, high, low, volume, close)
   }
 }

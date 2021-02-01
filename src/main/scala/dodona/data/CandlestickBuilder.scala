@@ -22,6 +22,7 @@ class CandlestickBuilder(interval: Int) {
         prices.head,
         prices.max,
         prices.min,
+        prices.length,
         prices.last
       )
       values = values.drop(values.length)

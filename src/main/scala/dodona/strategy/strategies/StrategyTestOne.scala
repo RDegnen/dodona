@@ -1,11 +1,10 @@
-package dodona.strategies.meanreversion
+package dodona.strategy.strategies
 
 import scala.concurrent.ExecutionContext
 
 import akka.actor.typed.{ActorRef, ActorSystem}
 import dodona.data.BaseDataHandler
 import dodona.events.{EventHandler, EventQueue}
-import dodona.strategies.IStrategy
 import dodona.{Constants, MainSystem}
 import org.ta4j.core.BaseStrategy
 import org.ta4j.core.indicators.EMAIndicator
@@ -14,6 +13,7 @@ import org.ta4j.core.trading.rules.{
   CrossedDownIndicatorRule,
   CrossedUpIndicatorRule
 }
+import dodona.strategy.IStrategy
 
 /**
   * This class is purly for testing and figuring out how
@@ -22,7 +22,7 @@ import org.ta4j.core.trading.rules.{
   * @param system
   * @param ec
   */
-class MeanReversion(implicit
+class StrategyTestOne(implicit
     val system: ActorSystem[MainSystem.Protocol],
     ec: ExecutionContext
 ) extends IStrategy {

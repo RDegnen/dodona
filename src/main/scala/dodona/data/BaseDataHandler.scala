@@ -33,7 +33,8 @@ abstract class BaseDataHandler(pair: String, interval: Int)(implicit val system:
       bar.open,
       bar.high,
       bar.low,
-      bar.close
+      bar.close,
+      bar.volume
     )
   }
 

@@ -10,7 +10,8 @@ import com.typesafe.config.ConfigFactory
 import dodona.data.handlers.BacktesterDataHandler
 import dodona.execution.handlers.BacktesterExecutionHandler
 import dodona.portfolio.portfolios.BacktesterPortfolio
-import dodona.strategies.meanreversion.MeanReversion
+import dodona.strategy.strategies.StrategyTestOne
+import dodona.strategy.strategies.ThreeAmigos
 
 object DodonaConfig {
   val conf = ConfigFactory.load()
@@ -27,7 +28,7 @@ object Dodona extends App {
   implicit val timeout: Timeout = 10.seconds
 
   val pair = "ETHUSD"
-  val strategy = new MeanReversion()
+  val strategy = new ThreeAmigos()
   val portfolio = new BacktesterPortfolio("USD")
   val executionHandler = new BacktesterExecutionHandler()
   system.ask(ref => MainSystem.InitEvents(ref, strategy, portfolio, executionHandler)).onComplete {

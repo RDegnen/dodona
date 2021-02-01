@@ -26,9 +26,17 @@ class BacktesterDataHandler(pair: String, interval: Int, eq: ActorRef[EventQueue
   def initialize(): Unit = {
     getLatestCandlesticks.onComplete {
       case Success(candles) => {
-        candles.foreach(addBarToSeries)
+        candles.zipWithIndex.foreach {
+          case (candle, idx) => {
+            // ADX Is NAN if the first n (20?) bars are dropped.
+            // It is NAN because some of the bars have no trades I guess.
+            if (idx > 20) {
+              addBarToSeries(candle)
+            }
+          }
+        }
         openSocket[Trade](
-          s"$BACKTESTER_WS_URL/market/trade?symbol=${pair}&timeToBegin=1569222899999",
+          s"$BACKTESTER_WS_URL/market/trade?symbol=${pair}&timeToBegin=1569780899999",
           onMessage
         )
       }
@@ -52,7 +60,7 @@ class BacktesterDataHandler(pair: String, interval: Int, eq: ActorRef[EventQueue
             addBarToSeries(bar)
             eq ! EventQueue.Push(EventHandler.MarketEvent)
           }
-          case None      => series.addPrice(trade.price)
+          case None      => series.addTrade(1, trade.price)
         }
       }
       case Left(err) => println(err)
