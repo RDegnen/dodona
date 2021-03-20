@@ -41,20 +41,3 @@ lazy val dodona = (project in file("."))
     resolvers += "liferaypublic" at "https://repository.liferay.com/nexus/content/repositories/public/",
     scalacOptions += "-Ywarn-unused:imports",
   )
-
-lazy val dodonaBacktester = (project in file("backtester"))
-  .dependsOn(dodona)
-  .settings(
-    name := "Dodona Backtester",
-    libraryDependencies ++= Seq(
-      "org.scalatest" %% "scalatest" % ScalaTestVersion % "test",
-      "com.typesafe.akka" %% "akka-actor-testkit-typed" % AkkaVersion % "test",
-      "org.slf4j" % "slf4j-nop" % "1.6.4",
-      "org.xerial" % "sqlite-jdbc" % "3.32.3.2"
-    ),
-    libraryDependencies ++= Seq(
-      "com.typesafe.slick" %% "slick",
-      "com.typesafe.slick" %% "slick-hikaricp",
-    ).map(_ % SlickVersion),
-    scalacOptions += "-Ywarn-unused:imports"
-  )
