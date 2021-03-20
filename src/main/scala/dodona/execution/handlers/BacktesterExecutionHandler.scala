@@ -7,11 +7,11 @@ import akka.actor.typed.{ActorRef, ActorSystem}
 import akka.http.scaladsl.model.HttpMethods
 import dodona.MainSystem
 import dodona.events.{EventHandler, EventQueue}
-import dodona.lib.domain.dodona.account.OrderFill
 import dodona.lib.http.clients.BacktesterHttpClient
 import dodona.lib.http.{BaseHttpClient, PUBLIC}
 import dodona.lib.websocket.IWebSocketClient
 import dodona.lib.websocket.WebSocketClient
+import dodona.lib.domain.dodona.account.OrderStreamEvent
 import akka.http.scaladsl.model.ws.Message
 import io.circe.parser.decode
 import dodona.execution.BaseExecutionHandler
@@ -27,8 +27,8 @@ class BacktesterExecutionHandler(implicit
 
   def initialize(eq: ActorRef[EventQueue.Push]): Unit = {
     eventQueue = eq
-    openSocket[OrderFill](
-      s"$BACKTESTER_WS_URL/account/order_events",
+    openSocket[OrderStreamEvent](
+      s"$BACKTESTER_WS_URL/order/events",
       onMessage
     )
   }
@@ -37,19 +37,19 @@ class BacktesterExecutionHandler(implicit
     httpClient.generateRequest[String](
       PUBLIC,
       HttpMethods.POST,
-      "/account/order",
+      "/order",
       Map("pair" -> pair, "orderType" -> orderType, "quantity" -> quantity.toString, "side" -> side)
     ).onComplete {
-      case Failure(exception) => println(exception)
+      case Failure(exception) => println(s"Exception placing order - $exception")
       case Success(value) =>
     }
   }
 
   private def onMessage(message: Message): Unit = {
-    decode[OrderFill](message.asTextMessage.getStrictText) match {
-      case Right(fill) =>
-        val orderFill = EventHandler.FillEvent(fill.pair, fill.action, fill.status, fill.price, fill.quantity, fill.transactionTime)
-        eventQueue ! EventQueue.Push(orderFill)
+    decode[OrderStreamEvent](message.asTextMessage.getStrictText) match {
+      case Right(event) =>
+        val orderEvent = EventHandler.OrderUpdateEvent(event.pair, event.action, event.status, event.price, event.quantity, event.transactionTime)
+        eventQueue ! EventQueue.Push(orderEvent)
       case Left(err) => println(err)
     }
   }

@@ -58,7 +58,11 @@ trait BaseHttpClient extends LazyLogging {
             Future.failed(new IOException(s"status: $intValue, message: $body"))
           })
         case Informational(intValue) => ???
-        case Redirection(intValue) => ???
+        case Redirection(intValue) =>
+          // Not sure how to handle this so sending an exception for now
+          unmarshalled.flatMap(body => {
+            Future.failed(new IOException(s"status: $intValue, message: $body"))
+          })
         case Success(intValue) => 
           decodeResponse[T](unmarshalled)
       }

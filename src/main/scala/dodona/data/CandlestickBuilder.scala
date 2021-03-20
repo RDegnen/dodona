@@ -36,7 +36,7 @@ class CandlestickBuilder(interval: Int) {
     val date = new Date(long)
     LocalDateTime.ofInstant(date.toInstant(), ZoneId.systemDefault())
   }
-
+  // FIXME Need to make this handle minutes, hours, days etc...
   private def getTimeDifference(
       ldt1: LocalDateTime,
       ldt2: LocalDateTime

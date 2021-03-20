@@ -10,7 +10,7 @@ import dodona.lib.http.{BaseHttpClient, HttpAuthLevel}
 import io.circe.Decoder
 
 class BacktesterHttpClient extends BaseHttpClient {
-  protected val baseUrl: String = "http://localhost:9090/api"
+  protected val baseUrl: String = "http://localhost:9090"
 
   def generateRequest[T: Decoder](
       authLevel: HttpAuthLevel,

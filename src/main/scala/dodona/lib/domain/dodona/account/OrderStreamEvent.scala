@@ -4,7 +4,7 @@ import io.circe.Decoder
 import io.circe.generic.semiauto._
 import io.circe.Encoder
 
-case class OrderFill(
+case class OrderStreamEvent(
     pair: String,
     action: String,
     status: String,
@@ -13,7 +13,7 @@ case class OrderFill(
     transactionTime: Long
 )
 
-object OrderFill {
-  lazy implicit val OrderFillDecoder: Decoder[OrderFill] = deriveDecoder
-  lazy implicit val OrderFillEncoder: Encoder[OrderFill] = deriveEncoder
+object OrderStreamEvent {
+  lazy implicit val OrderFillDecoder: Decoder[OrderStreamEvent] = deriveDecoder
+  lazy implicit val OrderFillEncoder: Encoder[OrderStreamEvent] = deriveEncoder
 }

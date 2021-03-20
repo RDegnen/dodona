@@ -22,6 +22,7 @@ class BacktesterDataHandler(pair: String, interval: Int, eq: ActorRef[EventQueue
 ) extends BaseDataHandler(pair, interval) {
   protected val httpClient: BaseHttpClient = new BacktesterHttpClient()
   protected val webSocketClient: IWebSocketClient = new WebSocketClient()
+  private val time = 1569780899999L
 
   def initialize(): Unit = {
     getLatestCandlesticks.onComplete {
@@ -36,20 +37,22 @@ class BacktesterDataHandler(pair: String, interval: Int, eq: ActorRef[EventQueue
           }
         }
         openSocket[Trade](
-          s"$BACKTESTER_WS_URL/market/trade?symbol=${pair}&timeToBegin=1569780899999",
+          s"$BACKTESTER_WS_URL/trade/stream?pair=${pair}&timeToBegin=$time",
           onMessage
         )
       }
-      case Failure(err) => println(err)
+      case Failure(err) =>
+        println(err)
     }
   }
 
   private def getLatestCandlesticks(): Future[List[Candlestick]] =
+    // For some reason the binance API is not listing USD pairs right now (03/20/21)
     httpClient.generateRequest[List[Candlestick]](
       PUBLIC,
       HttpMethods.GET,
-      "/market/OHLC",
-      Map("symbol" -> pair)
+      "/external/candlesticks",
+      Map("pair" -> s"${pair}T", "interval" -> s"${interval}m", "endTime" -> time.toString)
     )
 
   private def onMessage(message: Message): Unit = {

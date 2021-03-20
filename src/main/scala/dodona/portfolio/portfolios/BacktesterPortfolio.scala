@@ -71,7 +71,7 @@ class BacktesterPortfolio(quoteAsset: String)(implicit
       quote: String,
       price: BigDecimal,
       side: String
-  ): Option[EventHandler.OrderEvent] = {
+  ): Option[EventHandler.NewOrderEvent] = {
     val pair = s"$base$quote"
     val lotSize = getFilters(pair)
       .flatMap(filters => {
@@ -90,7 +90,7 @@ class BacktesterPortfolio(quoteAsset: String)(implicit
         ((fundsToRisk / price) / ls.stepSize)
           .setScale(0, BigDecimal.RoundingMode.HALF_UP) * ls.stepSize
       )
-    } yield EventHandler.OrderEvent(pair, "MARKET", quantity, side)
+    } yield EventHandler.NewOrderEvent(pair, "MARKET", quantity, side)
   }
 
   private def generateSellOrder(
@@ -98,10 +98,10 @@ class BacktesterPortfolio(quoteAsset: String)(implicit
       quote: String,
       price: BigDecimal,
       side: String
-  ): Option[EventHandler.OrderEvent] = {
+  ): Option[EventHandler.NewOrderEvent] = {
     for {
       baseAmount <- holdings.get(base)
-    } yield EventHandler.OrderEvent(s"$base$quote", "MARKET", baseAmount, side)
+    } yield EventHandler.NewOrderEvent(s"$base$quote", "MARKET", baseAmount, side)
   }
 
   private def constructHoldings(): Unit = {
@@ -109,7 +109,7 @@ class BacktesterPortfolio(quoteAsset: String)(implicit
       .generateRequest[Map[String, BigDecimal]](
         PUBLIC,
         HttpMethods.GET,
-        "/account/balance"
+        "/wallet/balance"
       )
       .onComplete {
         case Success(value) =>
@@ -136,7 +136,7 @@ class BacktesterPortfolio(quoteAsset: String)(implicit
       .generateRequest[ExchangeInfo](
         PUBLIC,
         HttpMethods.GET,
-        "/market/exchangeInfo"
+        "/external/exchangeInfo"
       )
       .onComplete {
         case Success(value) =>
